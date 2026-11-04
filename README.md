@@ -15,17 +15,29 @@ Model: 100% CLI Terminal (Pure Python Standard Library — Zero-Dependency)
 
 ---
 
-## 🚀 2. Cara Menjalankan Program (Panduan Demo Instalasi)
-Program ini dibuat murni menggunakan **Python Standard Library** sehingga **tidak membutuhkan instalasi paket eksternal (`pip install`)**, sehingga 100% aman dijalankan di laptop dosen/asisten tanpa risiko kegagalan dependency.
+## 🚀 2. Panduan Instalasi & Menjalankan Program (Tinggal Copy-Paste)
 
-### Langkah Menjalankan:
+Program ini dibuat murni menggunakan **Python Standard Library (Zero-Dependency)** sehingga **tidak memerlukan `pip install` apa pun**. 100% aman dijalankan di sistem operasi Linux, macOS, maupun Windows tanpa risiko masalah *dependency*.
+
+### 📋 Cara Cepat (One-Line Copy & Paste di Terminal)
+Cukup salin dan tempel blok perintah berikut langsung ke Terminal / Command Prompt Anda:
+
 ```bash
-# 1. Buka Terminal / Command Prompt
-# 2. Masuk ke folder proyek
-cd wattwise_project
+git clone https://github.com/bravenaufala/wattwise.git && cd wattwise && python3 main.py
+```
 
-# 3. Jalankan program
-python3 main.py   # atau python main.py
+---
+
+### 💻 Langkah Manual Bertahap:
+```bash
+# 1. Clone repositori dari GitHub ke laptop Anda
+git clone https://github.com/bravenaufala/wattwise.git
+
+# 2. Masuk ke direktori proyek
+cd wattwise
+
+# 3. Jalankan program aplikasi
+python3 main.py    # Pada Windows: python main.py
 ```
 
 ---
