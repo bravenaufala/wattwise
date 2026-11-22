@@ -1,12 +1,14 @@
 # ==============================================================================
 # MODUL PREDIKSI & SMART BUDGET OPTIMIZER (modul_prediksi.py)
 # Bagian Tanggung Jawab:
+# - Anggota 1: Transaksi Beli Token Baru, Cetak Struk 20-Digit & Integrasi Simpan Data
 # - Anggota 3: Prediksi Habisnya Token Listrik & Smart Diet Listrik (Greedy Optimizer)
 # ==============================================================================
 
 import os
+import random
 from datetime import datetime, timedelta
-from modul_crud import format_rupiah
+from modul_crud import format_rupiah, Warna, simpan_profil, simpan_semua_perangkat
 
 FILE_RIWAYAT_TOKEN = "riwayat_token.txt"
 
@@ -36,6 +38,82 @@ def muat_riwayat_token():
             except ValueError:
                 continue
     return riwayat
+
+# [FITUR BARU ANGGOTA 1: TRANSAKSI & PENCATATAN FILE RIWAYAT TOKEN]
+def beli_token_listrik(profil_rumah, nominal_rp):
+    """
+    Mensimulasikan pembelian token listrik PLN (Prabayar):
+    1. Memotong Pajak Penerangan Jalan (PPJ) 3% (regulasi resmi PLN).
+    2. Menghitung jumlah kWh yang didapat berdasarkan tarif per kWh golongan aktif.
+    3. Menghasilkan kode stroom token 20 digit unik (format XXXX-XXXX-XXXX-XXXX-XXXX).
+    4. Mengupdate sisa token di profil dan menyimpannya ke data_profil.txt.
+    5. Menulis transaksi ke riwayat_token.txt (File Handling Append).
+    """
+    tarif = profil_rumah["tarif"]
+    sisa_awal = profil_rumah["sisa_token_kwh"]
+
+    # Regulasi PLN: Pajak Penerangan Jalan (PPJ) rata-rata 3%
+    ppj_persen = 0.03
+    potongan_ppj = nominal_rp * ppj_persen
+    dana_bersih = nominal_rp - potongan_ppj
+
+    # Hitung kWh didapat
+    kwh_didapat = dana_bersih / tarif
+    sisa_baru = sisa_awal + kwh_didapat
+
+    # Update profil rumah & simpan ke file
+    profil_rumah["sisa_token_kwh"] = sisa_baru
+    simpan_profil(
+        profil_rumah["golongan"],
+        profil_rumah["va"],
+        profil_rumah["batas_watt"],
+        profil_rumah["tarif"],
+        profil_rumah["sisa_token_kwh"]
+    )
+
+    # Generate nomor token 20 digit acak
+    digit_token = "".join([str(random.randint(0, 9)) for _ in range(20)])
+    kode_token = f"{digit_token[0:4]}-{digit_token[4:8]}-{digit_token[8:12]}-{digit_token[12:16]}-{digit_token[16:20]}"
+
+    # Simpan ke file riwayat_token.txt (Append mode)
+    tgl_sekarang = datetime.now().strftime("%Y-%m-%d %H:%M")
+    with open(FILE_RIWAYAT_TOKEN, "a", encoding="utf-8") as f:
+        f.write(f"{tgl_sekarang}|{int(nominal_rp)}|{kwh_didapat:.1f}|{sisa_awal:.1f}\n")
+
+    struk = {
+        "nominal": nominal_rp,
+        "ppj": potongan_ppj,
+        "dana_bersih": dana_bersih,
+        "kwh_didapat": kwh_didapat,
+        "sisa_awal": sisa_awal,
+        "sisa_baru": sisa_baru,
+        "kode_token": kode_token,
+        "tanggal": tgl_sekarang
+    }
+    return struk
+
+def tampilkan_struk_token(struk, profil_rumah):
+    """Menampilkan struk digital resmi pembelian token listrik PLN."""
+    print("\n" + "="*55)
+    print(f"       {Warna.CYAN}{Warna.TEBAL}STRUK PEMBELIAN LISTRIK PRABAYAR (PLN){Warna.RESET}")
+    print("="*55)
+    print(f" Waktu Transaksi   : {struk['tanggal']}")
+    print(f" ID Pelanggan / ID : 5382-9102-4412 (Simulasi)")
+    print(f" Golongan / Daya   : {profil_rumah['golongan']} / {profil_rumah['va']} VA")
+    print(f" Tarif Dasar Listrik: {format_rupiah(profil_rumah['tarif'])} /kWh")
+    print("-" * 55)
+    print(f" Pembelian Token   : {format_rupiah(struk['nominal'])}")
+    print(f" Potongan PPJ (3%) : {format_rupiah(struk['ppj'])}")
+    print(f" Nilai Listrik Net : {format_rupiah(struk['dana_bersih'])}")
+    print(f" {Warna.HIJAU}{Warna.TEBAL}Energi Didapat    : +{struk['kwh_didapat']:.2f} kWh{Warna.RESET}")
+    print(f" Sisa Token Baru   : {struk['sisa_baru']:.2f} kWh")
+    print("="*55)
+    print(f" {Warna.KUNING}{Warna.TEBAL}KODE TOKEN 20 DIGIT ANDA:{Warna.RESET}")
+    print(f" >> {Warna.HIJAU}{Warna.TEBAL}{struk['kode_token']}{Warna.RESET} <<")
+    print("="*55)
+    print(" [i] Masukkan kode 20 digit di atas ke meteran listrik rumah.")
+    print(" [i] Data sisa token dan histori berhasil disimpan otomatis.")
+    print("="*55)
 
 # [FITUR TAMBAHAN: PREDIKSI HABISNYA TOKEN LISTRIK]
 # [TODO: Refine Anggota 3 - Tambahkan grafik tren sisa token berdasarkan tanggal]
@@ -191,9 +269,22 @@ def smart_budget_optimizer(daftar_perangkat, tarif_per_kwh=1444.70):
     print(f" TOTAL PENGHEMATAN DIDAPAT: {format_rupiah(total_dihemat)} / Bulan")
 
     if biaya_berjalan <= target_budget:
-        print("\n[v] TARGET TERCAPAI! Dengan mengikuti rekomendasi di atas, tagihan listrik Anda")
+        print(f"\n{Warna.HIJAU}[v] TARGET TERCAPAI! Dengan mengikuti rekomendasi di atas, tagihan listrik Anda{Warna.RESET}")
         print("    dipastikan tidak akan melebihi batas anggaran yang Anda tentukan.")
     else:
-        print("\n[!] TARGET HAMPIR TERCAPAI: Seluruh perangkat hiburan & sekunder telah diminimalkan.")
+        print(f"\n{Warna.KUNING}[!] TARGET HAMPIR TERCAPAI: Seluruh perangkat hiburan & sekunder telah diminimalkan.{Warna.RESET}")
         print("    Untuk menghemat lebih jauh, pertimbangkan mengganti perangkat utama dengan teknologi inverter/hemat energi.")
     print("="*75)
+
+    if rekomendasi_diet:
+        print("\n" + "-"*75)
+        konfirmasi = input("Apakah Anda ingin langsung menerapkan jadwal rekomendasi hemat ini ke data perangkat? (y/n): ").strip().lower()
+        if konfirmasi == "y":
+            for r in rekomendasi_diet:
+                for p in daftar_perangkat:
+                    if p["nama"] == r["nama"]:
+                        p["jam_pakai"] = r["jam_baru"]
+                        if len(p.get("rentang_jam", [])) > r["jam_baru"]:
+                            p["rentang_jam"] = p["rentang_jam"][:r["jam_baru"]]
+            simpan_semua_perangkat(daftar_perangkat)
+            print(f"\n{Warna.HIJAU}[OK] Jadwal operasional baru berhasil diterapkan ke inventaris perangkat!{Warna.RESET}")

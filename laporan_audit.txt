@@ -13,15 +13,15 @@ RINCIAN PERANGKAT ELEKTRONIK:
 ID     | Nama Alat              | Ruang        | Watt   | Jam  | Biaya/Bulan
 ---------------------------------------------------------------------------
 EL01   | Kulkas 2 Pintu         | Dapur        | 120    | 24   | Rp 124.822,08
-EL02   | Rice Cooker            | Dapur        | 400    | 2    | Rp 72.812,88
+EL02   | Rice Cooker            | Dapur        | 400    | 3    | Rp 88.415,64
 EL03   | TV LED 43 Inch         | Ruang Tengah | 80     | 5    | Rp 27.218,15
 EL04   | Setrika Listrik        | Kamar Tidur  | 350    | 2    | Rp 30.338,70
 EL05   | AC Kamar 1/2 PK        | Kamar Tidur  | 380    | 8    | Rp 137.304,29
 EL06   | Dispenser Air          | Dapur        | 350    | 4    | Rp 82.347,90
 ---------------------------------------------------------------------------
-TOTAL ESTIMASI BIAYA LISTRIK : Rp 474.844,00 / Bulan
-TOTAL KONSUMSI LISTRIK       : 328.68 kWh / Bulan
-POTENSI RUGI VAMPIRE POWER   : Rp 902.879,71 / Tahun
+TOTAL ESTIMASI BIAYA LISTRIK : Rp 490.446,76 / Bulan
+TOTAL KONSUMSI LISTRIK       : 339.48 kWh / Bulan
+POTENSI RUGI VAMPIRE POWER   : Rp 882.076,03 / Tahun
 
 CATATAN AUDITOR:
 - Matikan alat elektronika saat jam beban puncak (18:00 - 21:00).

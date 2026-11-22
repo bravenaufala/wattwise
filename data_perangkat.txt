@@ -1,6 +1,6 @@
 ID|Nama Alat|Ruangan|Watt Aktif|Watt Standby|Jam Pakai|Rentang Jam|Prioritas
 EL01|Kulkas 2 Pintu|Dapur|120|15|24|0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23|Primer
-EL02|Rice Cooker|Dapur|400|40|2|6,18,19|Primer
+EL02|Rice Cooker|Dapur|400|40|3|6,18,19|Primer
 EL03|TV LED 43 Inch|Ruang Tengah|80|12|5|17,18,19,20,21|Tersier
 EL04|Setrika Listrik|Kamar Tidur|350|0|2|18,19|Sekunder
 EL05|AC Kamar 1/2 PK|Kamar Tidur|380|8|8|21,22,23,0,1,2,3,4|Sekunder

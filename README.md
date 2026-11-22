@@ -66,73 +66,95 @@ wattwise_project/
 |---|---|---|---|
 | **1** | **Tuple & Sequence Unpacking** | Konstanta tarif PLN `(Kode, VA, Batas_W, Tarif)` yang di-unpack saat pemilihan golongan | `modul_crud.py` (`GOLONGAN_PLN`) & `main.py` (`menu_profil_daya`) |
 | **2** | **Dictionary & List** | Setiap perangkat direpresentasikan sebagai `dict` dan dihimpun ke dalam list inventaris | `modul_crud.py` (`muat_perangkat`, `tambah_perangkat`) |
-| **3** | **Set Operations** | `set()` untuk ruangan unik, `.intersection()` untuk bentrok jam, dan `.difference()` untuk mendeteksi alat boros | `modul_analisis.py` (`ambil_himpunan_ruangan`, `deteksi_perangkat_boros`) |
-| **4** | **Nested Loop (Perulangan Bersarang)** | Outer loop 24 jam & inner loop daftar perangkat untuk grafik ASCII simulasi beban; Outer loop ruangan & inner loop perangkat untuk audit ruangan | `modul_analisis.py` (`simulasi_beban_24jam`, `audit_per_ruangan`) |
-| **5** | **Searching & Sorting Manual** | Linear Search (cari nama/ruangan/daya) dan Bubble Sort manual (urutkan biaya & vampire power) tanpa bergantung pada fungsi bawaan | `modul_analisis.py` (`cari_perangkat_nama`, `urutkan_perangkat_biaya`) |
-| **6** | **Manipulasi String & File I/O** | Operasi `.split('\|')`, `.join('\|')`, `.strip()`, `.title()`, format rupiah kustom, serta `open(..., 'r'/'w')` | `modul_crud.py` & `modul_analisis.py` (`export_laporan_audit`) |
+| **3** | **Set Operations Lengkap** | `set()` untuk ruangan unik, `.intersection()` untuk irisan bentrok jam 2 alat, `.difference()` untuk deteksi alat boros, dan `.union()` untuk gabungan jam aktif ruangan | `modul_analisis.py` (`ambil_himpunan_ruangan`, `deteksi_bentrok_jam_perangkat`, `deteksi_perangkat_boros`, `gabungkan_jam_aktif_ruangan`) |
+| **4** | **Fungsi Rekursif (Recursion)** | Pencarian ID perangkat dengan Binary Search secara rekursif murni (Base case & Recursive step) dengan kompleksitas $O(\log n)$ | `modul_analisis.py` (`binary_search_rekursif`, `cari_perangkat_id_binary`) |
+| **5** | **Searching & Sorting Lengkap** | • **Searching:** Linear Search (nama & ruangan) dan Binary Search Rekursif (ID).<br>• **Sorting:** Optimized Bubble Sort (`swapped` flag), Insertion Sort (Watt aktif), dan Selection Sort (Prioritas). | `modul_analisis.py` (`cari_perangkat_nama`, `cari_perangkat_id_binary`, `urutkan_perangkat_biaya`, `urutkan_perangkat_watt_insertion`, `urutkan_perangkat_prioritas`) |
+| **6** | **Nested Loop (Perulangan Bersarang)** | Outer loop 24 jam & inner loop daftar perangkat untuk matriks simulasi beban ASCII; Outer loop ruangan & inner loop perangkat untuk audit per ruangan | `modul_analisis.py` (`simulasi_beban_24jam`, `audit_per_ruangan`) |
+| **7** | **Manipulasi String & File Handling** | Operasi `.split('|')`, `.join('|')`, `.strip()`, `.title()`, sanitasi string delimiter pipe, parsing rentang jam fleksibel (`8-12`), struk token 20 digit, dan file I/O multi-entitas (`.txt`) | `modul_crud.py`, `modul_analisis.py`, & `modul_prediksi.py` |
 
 ---
 
 ## 👥 5. Pembagian Jobdesk Anggota Tim (3 Orang)
 
-### 👤 Anggota 1: Core Data, File Handling & CRUD (Create & Read)
+### 👤 Anggota 1 (Lead Developer / System Architect & Algorithm Specialist)
 - **Tanggung Jawab:**
-  - Merancang struktur data `Tuple` golongan tarif PLN dan `Dictionary` perangkat.
-  - Membangun mekanisme file handling baca/tulis (`.txt`) dengan delimiter `|`.
-  - Mengimplementasikan fitur **Tambah Perangkat (Create)** dengan validasi input string & angka.
-  - Mengimplementasikan fitur **Lihat Inventaris (Read)** dengan tabel ASCII dan kalkulasi kWh/biaya bulanan.
-- **File Kerja:** `modul_crud.py` (bagian atas & Create/Read) dan `main.py` (menu awal).
+  - Merancang arsitektur sistem, struktur data `Tuple` regulasi PLN, dan integrasi antar-modul di `main.py`.
+  - Mengimplementasikan **Fungsi Rekursif & Binary Search** (`binary_search_rekursif`) untuk pencarian ID perangkat $O(\log n)$.
+  - Mengimplementasikan **Insertion Sort** manual untuk menyortir beban Watt aktif dan optimasi `swapped` flag pada Bubble Sort.
+  - Mengimplementasikan **Set Union** (`gabungkan_jam_aktif_ruangan`) serta algoritma **Smart Load Shifting (Anti-Jeglek Otomatis)**.
+  - Membangun subsistem transaksi **Beli Token Listrik PLN** (perhitungan PPJ 3%, penambahan kWh, generate kode token 20 digit, dan struk digital).
+  - Merancang sistem pewarnaan antarmuka terminal (ANSI Escape Colors — Zero Dependency).
+- **File Kerja:** `main.py`, `modul_analisis.py` (Search/Sort/Rekursi/Union/Anti-Jeglek), `modul_prediksi.py` (Beli Token), dan `modul_crud.py` (ANSI/Tuple).
 
 ---
 
-### 👤 Anggota 2: CRUD (Update & Delete), Searching, Sorting & Operasi Set
+### 👤 Anggota 2 (CRUD, Data Integrity & Form Validation Specialist)
 - **Tanggung Jawab:**
-  - Mengimplementasikan fitur **Ubah Data Perangkat (Update)** dan **Hapus Perangkat (Delete)**.
-  - Membangun algoritma **Searching (Linear Search)** berdasarkan nama alat dan ruangan.
-  - Membangun algoritma **Sorting manual (Bubble Sort & Selection Sort)** untuk menyortir perangkat terboros dan standby tertinggi.
-  - Menerapkan tipe data **Set** untuk daftar ruangan unik serta operasi `.difference()` & `.intersection()`.
-- **File Kerja:** `modul_crud.py` (Update/Delete) dan `modul_analisis.py` (Set, Search, Sort).
+  - Membangun operasi **CRUD Lengkap** pada inventaris perangkat (Tambah, Lihat, Ubah, Hapus).
+  - Membangun mekanisme sanitasi string (`sanitasi_string`) untuk mencegah kerusakan file `.txt` akibat karakter delimiter pipe (`|`).
+  - Membangun parser input rentang jam fleksibel (`parse_rentang_jam`) yang mendukung format koma maupun rentang strip (`8-12` / `22-2`).
+  - Membangun fitur **Linear Search** (pencarian nama & ruangan) dan **Selection Sort** (pengurutan prioritas: Primer $\rightarrow$ Sekunder $\rightarrow$ Tersier).
+  - Mengimplementasikan operasi himpunan **Set Difference** (`deteksi_perangkat_boros`) dan **Set Intersection** (`deteksi_bentrok_jam_perangkat`).
+- **File Kerja:** `modul_crud.py` (CRUD & Validasi) dan `modul_analisis.py` (Linear Search, Selection Sort, Set Difference & Intersection).
 
 ---
 
-### 👤 Anggota 3: Nested Loop (Simulasi 24 Jam), Vampire Power, Prediksi & Export
+### 👤 Anggota 3 (Nested Loop, Simulation & Analytics Specialist)
 - **Tanggung Jawab:**
-  - Membangun algoritma **Perulangan Bersarang (Nested Loop)** untuk Simulasi Matriks Beban 24 Jam dengan ASCII bar chart dan detektor Anti-Jeglek.
-  - Menghitung kerugian kebocoran daya standby (**Vampire Power**) per bulan dan per tahun.
-  - Membangun fitur tambahan **Prediksi Habisnya Token** menggunakan modul `datetime` dan **Smart Budget Optimizer** dengan pendekatan algoritma Greedy.
-  - Mengimplementasikan fitur **Export Laporan Audit** ke file `laporan_audit.txt`.
-- **File Kerja:** `modul_analisis.py` (Simulasi 24 Jam, Audit Ruangan, Export) dan `modul_prediksi.py`.
+  - Membangun algoritma **Perulangan Bersarang (Nested Loop)** untuk Simulasi Matriks Beban 24 Jam dengan visualisasi ASCII load bar chart dan detektor alarm overload.
+  - Membangun audit beban bersarang per ruangan (Outer loop: Ruangan unik, Inner loop: Perangkat).
+  - Menghitung kebocoran energi dan kerugian finansial akibat **Vampire Power (Daya Standby)** per bulan dan per tahun.
+  - Membangun fitur **Prediksi Waktu Habisnya Token** menggunakan modul `datetime` & `timedelta`.
+  - Mengimplementasikan optimasi anggaran **Smart Budget Optimizer** dengan pendekatan algoritma Greedy berjenjang beserta integrasi penyimpanan jadwal baru ke database.
+  - Mengimplementasikan fitur **Export Laporan Resmi Audit Listrik** ke file teks format `.txt`.
+- **File Kerja:** `modul_analisis.py` (Simulasi 24 Jam, Audit Ruangan, Vampire Power, Export) dan `modul_prediksi.py` (Prediksi Token & Budget Optimizer).
 
 ---
 
-## 🎭 6. Skenario Demonstrasi saat Presentasi (Alur Demo Juara)
-1. **Langkah 1 (Anggota 1):** Buka terminal, jelaskan bahwa program zero-dependency. Pilih Menu 1 -> Sub-menu 2 (Lihat Data). Tunjukkan bagaimana data dibaca dari file `data_perangkat.txt`. Tambah 1 perangkat baru (Sub-menu 1) untuk demo Create.
-2. **Langkah 2 (Anggota 2):** Pilih Menu 2 (Pencarian & Pengurutan). Demokan pencarian nama "AC" atau ruangan "Dapur". Lalu klik urutkan biaya terboros (Bubble sort berjalan). Jelaskan cara kerja pertukaran (*swap*) elemen di Bubble Sort.
-3. **Langkah 3 (Anggota 3):** Pilih Menu 3 (Simulasi Beban 24 Jam). Tunjukkan visualisasi bar ASCII Jam 19:00 yang melonjak hingga **1308 W (>1100 W)** dan memicu alarm **OVERLOAD / MCB TRIP**. Jelaskan outer loop (jam) dan inner loop (perangkat).
-4. **Langkah 4 (Anggota 3):** Pilih Menu 4 (Vampire Power) untuk menunjukkan uang yang terbuang sia-sia per tahun. Lalu buka Menu 5 untuk demo Prediksi Token & Budget Optimizer (masukkan budget Rp 200.000). Terakhir pilih Menu 7 untuk export laporan ke file `.txt`.
+## 🎭 6. Skenario Demonstrasi saat Presentasi (Alur Demo Juara Tanpa Slide)
+
+1. **Langkah 1 (Anggota 1):**
+   - Buka terminal, tunjukkan instalasi yang sangat bersih (zero-dependency, cukup `python main.py`).
+   - Tunjukkan menu utama berwana ANSI. Buka Menu 6 -> Opsi 2 (Beli Token Listrik PLN). Masukkan nominal Rp 50.000, tunjukkan kalkulasi potongan PPJ 3%, penambahan kWh, pencatatan otomatis ke `riwayat_token.txt`, dan cetak struk kode stroom 20 digit.
+   - Buka Menu 2 -> Opsi 3 (Binary Search Rekursif). Cari ID `EL04` dan jelaskan proses pemanggilan fungsi rekursif $O(\log n)$.
+2. **Langkah 2 (Anggota 2):**
+   - Buka Menu 1 (Manajemen CRUD Perangkat). Tunjukkan tabel inventaris dengan kolom persentase beban biaya.
+   - Demokan penambahan alat baru (Create) dengan rentang jam fleksibel `8-12` dan perlihatkan sanitasi input.
+   - Buka Menu 2 -> Opsi 9 (Set Intersection) untuk membuktikan deteksi bentrok jam antara Rice Cooker dan Setrika pada Pk 18:00-19:00.
+3. **Langkah 3 (Anggota 3):**
+   - Buka Menu 3 (Simulasi Beban 24 Jam). Tunjukkan matriks 24 baris dengan ASCII bar berwarna merah di Pk 19:00 (1308 W > 1100 W Overload).
+   - Tunjukkan fitur **Smart Load Shifting**: sistem secara cerdas menyarankan pemindahan jam Setrika ke Pk 08:00 sehingga beban Pk 19:00 langsung turun menjadi 958 W (Aman).
+   - Buka Menu 5 (Prediksi Token & Budget Optimizer). Masukkan anggaran Rp 200.000, perlihatkan algoritma Greedy memangkas jam alat Tersier, lalu terapkan jadwal hemat ke database.
+   - Buka Menu 7 (Export Laporan) dan buka file `laporan_audit.txt` untuk membuktikan hasil audit telah tersimpan permanen.
 
 ---
 
 ## 🎯 7. Cheat Sheet Tanya Jawab Perorangan (Bocoran Pertanyaan Dosen & Jawaban)
 
-### ❓ Pertanyaan untuk Anggota 1:
-* **Dosen:** *"Mengapa Golongan PLN disimpan dalam bentuk Tuple, bukan List?"*
-  * **Jawaban Mantap:** *"Karena tarif dasar listrik PLN merupakan konstanta regulasi yang sifatnya immutable (tidak boleh diubah sembarangan saat runtime). Tuple melindungi data ini dari perubahan tidak sengaja dan mendukung sequence unpacking secara cepat saat membaca `kode, va, batas_w, tarif = GOLONGAN_PLN[i]`."*
-* **Dosen:** *"Bagaimana cara program menangani data yang dibaca dari file teks agar bisa diolah sebagai angka?"*
-  * **Jawaban Mantap:** *"Saat membaca baris dari file `.txt`, kami menggunakan metode `.strip()` untuk menghilangkan enter/spasi, lalu memecahnya dengan `.split('\|')`. Kolom angka seperti watt dan jam kemudian kami konversi eksplisit dengan tipe data `int()` atau `float()` sebelum dimasukkan ke dalam Dictionary."*
+### ❓ Pertanyaan untuk Anggota 1 (Lead / Algorithm & Architecture):
+* **Dosen:** *"Di mana letak implementasi Fungsi Rekursif pada program kalian dan bagaimana cara kerjanya?"*
+  * **Jawaban Mantap:** *"Kami mengimplementasikannya pada fungsi `binary_search_rekursif` di `modul_analisis.py`. Fungsi ini memiliki dua base case: pertama, jika `low > high`, artinya data tidak ada; kedua, jika elemen tengah `mid` sama dengan target ID, data ditemukan. Jika target lebih kecil atau lebih besar, fungsi memanggil dirinya sendiri secara rekursif pada paruh subarray kiri atau kanan dengan membagi ruang pencarian menjadi setengahnya ($O(\log n)$)."*
+* **Dosen:** *"Bagaimana cara kerja algoritma Insertion Sort pada pengurutan daya Watt?"*
+  * **Jawaban Mantap:** *"Insertion sort bekerja dengan mengasumsikan elemen pertama sudah terurut. Lalu pada perulangan dari elemen ke-1 hingga n-1, sistem mengambil elemen `key` dan membandingkannya mundur ke belakang melalui `while j >= 0`. Jika elemen sebelumnya lebih kecil dari `key` (untuk descending), elemen digeser ke kanan `data[j+1] = data[j]`. Ketika posisi yang tepat ditemukan, `key` disisipkan ke posisi tersebut."*
+* **Dosen:** *"Bagaimana sistem menangani transaksi token listrik prabayar?"*
+  * **Jawaban Mantap:** *"Pada fungsi `beli_token_listrik`, nominal input dipotong PPJ 3% sesuai regulasi PLN untuk mendapatkan nilai bersih. Nilai bersih dibagi tarif golongan saat ini untuk memperoleh kWh. Sisa kWh di profil diakumulasikan, disimpan ke `data_profil.txt`, dan baris histori baru di-append ke `riwayat_token.txt` lengkap dengan nomor token acak 20 digit berformat standar PLN."*
 
 ---
 
-### ❓ Pertanyaan untuk Anggota 2:
-* **Dosen:** *"Coba jelaskan bagaimana algoritma Bubble Sort pada fungsi `urutkan_perangkat_biaya` bekerja!"*
-  * **Jawaban Mantap:** *"Bubble Sort bekerja dengan membandingkan dua elemen yang bersebelahan secara berulang melalui nested loop. Pada inner loop, jika elemen saat ini memiliki biaya lebih kecil daripada elemen berikutnya (untuk pengurutan menurun/descending), posisinya ditukar menggunakan mekanisme swap Python `data[j], data[j+1] = data[j+1], data[j]`. Proses ini diulang sebanyak n-1 kali hingga elemen terbesar mengapung ke posisi atas."*
-* **Dosen:** *"Di mana letak penerapan operasi himpunan (Set) dan apa fungsinya?"*
-  * **Jawaban Mantap:** *"Kami menerapkan Set di fungsi `ambil_himpunan_ruangan` untuk mengeliminasi duplikasi nama ruangan. Selain itu, kami menggunakan `.difference()` pada `deteksi_perangkat_boros` untuk mencari selisih antara seluruh perangkat dan perangkat hemat energi, serta `.intersection()` untuk mendeteksi irisan jam nyala yang bentrok."*
+### ❓ Pertanyaan untuk Anggota 2 (CRUD & Data Validation):
+* **Dosen:** *"Bagaimana program menjamin data di file teks tidak korup jika pengguna memasukkan karakter sembarangan?"*
+  * **Jawaban Mantap:** *"Kami membuat fungsi sanitasi string `sanitasi_string` di `modul_crud.py`. Karena file database kami menggunakan delimiter pipe `|`, setiap input teks nama atau ruangan secara otomatis disanitasi dengan mengganti karakter pipe menjadi garis miring `/` dan membersihkan spasi awal/akhir dengan `.strip()`."*
+* **Dosen:** *"Bagaimana kalian mengurai input rentang jam yang fleksibel seperti '8-12'?"*
+  * **Jawaban Mantap:** *"Kami membuat fungsi parser `parse_rentang_jam`. Input di-split berdasarkan koma, lalu untuk tiap segmen yang mengandung karakter tanda hubung `-`, kami split batas awal dan akhirnya, lalu memasukkan bilangan integer dalam rentang tersebut ke dalam tipe data `set` guna menjamin jam aktif bernilai unik (0 s/d 23), termasuk penanganan jam lewat tengah malam seperti '22-2'."*
+* **Dosen:** *"Bagaimana operasi Set Intersection dan Set Difference diterapkan pada data inventaris?"*
+  * **Jawaban Mantap:** *"Set Intersection kami gunakan pada `deteksi_bentrok_jam_perangkat` dengan mengiriskan `set(jam_alat_A).intersection(set(jam_alat_B))` untuk mengetahui jam berapa kedua alat menyala bersamaan. Sedangkan Set Difference kami gunakan pada `deteksi_perangkat_boros` dengan mengurangkan himpunan seluruh ID perangkat dengan himpunan ID perangkat hemat energi menggunakan `.difference()`."*
 
 ---
 
-### ❓ Pertanyaan untuk Anggota 3:
-* **Dosen:** *"Bagaimana perulangan bersarang (Nested Loop) bekerja pada fitur Simulasi 24 Jam?"*
-  * **Jawaban Mantap:** *"Outer loop mengiterasi indeks jam dari 0 hingga 23 (24 jam). Pada setiap jam tersebut, Inner loop mengiterasi seluruh daftar perangkat dalam rumah. Jika jam saat itu ada di dalam `rentang_jam` perangkat, maka daya aktifnya dijumlahkan; jika tidak, daya standby-nya yang dijumlahkan. Hasil penjumlahan inilah yang divisualisasikan menjadi ASCII load bar."*
+### ❓ Pertanyaan untuk Anggota 3 (Nested Loop, Simulation & Analytics):
+* **Dosen:** *"Bagaimana perulangan bersarang (Nested Loop) bekerja pada fitur Simulasi Beban 24 Jam?"*
+  * **Jawaban Mantap:** *"Outer loop mengiterasi 24 jam dalam sehari dari jam 0 s/d 23. Di setiap jam, Inner loop mengiterasi seluruh daftar perangkat dalam rumah. Jika jam saat itu ada di dalam list `rentang_jam` perangkat, maka daya aktifnya dijumlahkan; jika tidak, daya standby-nya yang dijumlahkan. Akumulasi daya ini dibandingkan dengan batas aman daya PLN untuk menggambar ASCII bar chart dan status overload."*
 * **Dosen:** *"Bagaimana logika algoritma Greedy pada Smart Budget Optimizer?"*
   * **Jawaban Mantap:** *"Algoritma Greedy mengambil keputusan lokal terbaik secara bertahap. Sistem menyortir perangkat dari prioritas terendah yaitu Tersier terlebih dahulu. Selama total estimasi biaya masih melebihi budget target pengguna, sistem memangkas jam operasional perangkat Tersier 1 jam demi 1 jam. Jika perangkat Tersier sudah minimal dan budget belum tercapai, sistem beralih memangkas perangkat Sekunder, sehingga perangkat Primer (seperti kulkas/pompa) tetap terlindungi."*
+* **Dosen:** *"Bagaimana sistem menghasilkan rekomendasi otomatis Smart Load Shifting saat listrik jeglek?"*
+  * **Jawaban Mantap:** *"Pada fungsi `rekomendasi_anti_jeglek`, sistem mendeteksi perangkat non-primer berdaya besar yang menyala pada jam overload tersebut (misal Setrika 350 W pada Pk 19:00). Sistem kemudian memindai jam-jam kosong di siang/sore hari yang beban kumulatifnya masih sangat rendah, lalu merekomendasikan pemindahan jadwal pemakaian ke jam tersebut agar beban jam 19:00 turun drastis di bawah batas kapasitas aman MCB."*

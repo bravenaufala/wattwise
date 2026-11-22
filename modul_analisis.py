@@ -1,15 +1,16 @@
 # ==============================================================================
 # MODUL ANALISIS, SIMULASI & OPTIMASI (modul_analisis.py)
 # Bagian Tanggung Jawab:
-# - Anggota 2: Searching, Sorting Manual, Operasi Set (Himpunan)
+# - Anggota 1: Binary Search Rekursif, Insertion Sort, Set Union & Rekomendasi Anti-Jeglek
+# - Anggota 2: Searching, Sorting Manual (Bubble & Selection), Operasi Set (Intersection & Difference)
 # - Anggota 3: Simulasi Matriks Beban 24 Jam (Nested Loop), Detektor Vampire Power,
 #              Audit Ruangan & Export Laporan ke laporan_audit.txt
 # ==============================================================================
 
-from modul_crud import format_rupiah
+from modul_crud import format_rupiah, Warna
 
 # ==============================================================================
-# [BAGIAN ANGGOTA 2: OPERASI SET (HIMPUNAN)]
+# [BAGIAN ANGGOTA 1 & 2: OPERASI SET (HIMPUNAN)]
 # ==============================================================================
 
 # [MATERI: SET - MENYIMPAN NILAI UNIK]
@@ -52,9 +53,70 @@ def deteksi_perangkat_boros(daftar_perangkat, ambang_aktif=200, ambang_standby=1
     list_boros = [p for p in daftar_perangkat if p["id"] in set_boros_id]
     return list_boros
 
+# [MATERI: SET - OPERASI UNION (|) - DIKERJAKAN OLEH ANGGOTA 1]
+def gabungkan_jam_aktif_ruangan(daftar_perangkat, ruang_a, ruang_b=None):
+    """
+    Menggabungkan seluruh jam aktif perangkat pada satu atau dua ruangan tertentu
+    menggunakan Operasi Himpunan Union (|).
+    """
+    set_jam_a = set()
+    set_jam_b = set()
+
+    for p in daftar_perangkat:
+        if p["ruangan"].lower() == ruang_a.strip().lower():
+            set_jam_a = set_jam_a.union(set(p.get("rentang_jam", [])))
+        elif ruang_b and p["ruangan"].lower() == ruang_b.strip().lower():
+            set_jam_b = set_jam_b.union(set(p.get("rentang_jam", [])))
+
+    if ruang_b:
+        gabungan = set_jam_a.union(set_jam_b)
+        return sorted(list(gabungan)), sorted(list(set_jam_a)), sorted(list(set_jam_b))
+    else:
+        return sorted(list(set_jam_a)), sorted(list(set_jam_a)), []
+
 # ==============================================================================
-# [BAGIAN ANGGOTA 2: SEARCHING (PENCARIAN MANUAL)]
+# [BAGIAN ANGGOTA 1 & 2: SEARCHING (PENCARIAN MANUAL)]
 # ==============================================================================
+
+# [MATERI: FUNGSI REKURSIF & SEARCHING - BINARY SEARCH REKURSIF - ANGGOTA 1]
+def binary_search_rekursif(data_terurut, target_id, low, high, langkah=1):
+    """
+    [MATERI: FUNGSI REKURSIF]
+    Mencari perangkat berdasarkan ID menggunakan algoritma Binary Search secara REKURSIF.
+    Kompleksitas Waktu: O(log n).
+
+    Base Case:
+    1. low > high: Elemen tidak ditemukan di dalam list.
+    2. data_terurut[mid]['id'] == target_id: Elemen berhasil ditemukan.
+
+    Recursive Step:
+    - Jika target_id < data_terurut[mid]['id']: panggil rekursif pada paruh kiri (low s/d mid - 1).
+    - Jika target_id > data_terurut[mid]['id']: panggil rekursif pada paruh kanan (mid + 1 s/d high).
+    """
+    if low > high:
+        return None, langkah - 1
+
+    mid = (low + high) // 2
+    id_mid = data_terurut[mid]["id"].upper()
+
+    if id_mid == target_id:
+        return data_terurut[mid], langkah
+    elif target_id < id_mid:
+        return binary_search_rekursif(data_terurut, target_id, low, mid - 1, langkah + 1)
+    else:
+        return binary_search_rekursif(data_terurut, target_id, mid + 1, high, langkah + 1)
+
+def cari_perangkat_id_binary(daftar_perangkat, target_id):
+    """
+    Fungsi pembungkus (wrapper) untuk pencarian ID dengan Binary Search Rekursif.
+    Memastikan list diurutkan berdasarkan ID terlebih dahulu (prasyarat mutlak Binary Search).
+    """
+    if not daftar_perangkat:
+        return None, 0
+    # Prasyarat Binary Search: Data harus terurut
+    data_terurut = sorted(daftar_perangkat, key=lambda x: x["id"].upper())
+    target_clean = target_id.strip().upper()
+    return binary_search_rekursif(data_terurut, target_clean, 0, len(data_terurut) - 1, 1)
 
 # [MATERI: SEARCHING - LINEAR SEARCH BERDASARKAN KATA KUNCI NAMA]
 def cari_perangkat_nama(daftar_perangkat, keyword):
@@ -89,16 +151,15 @@ def cari_perangkat_daya_tinggi(daftar_perangkat, min_watt):
     return hasil
 
 # ==============================================================================
-# [BAGIAN ANGGOTA 2: SORTING (PENGURUTAN MANUAL - BUBBLE SORT)]
+# [BAGIAN ANGGOTA 1 & 2: SORTING (PENGURUTAN MANUAL)]
 # ==============================================================================
 
-# [MATERI: SORTING - MANUAL BUBBLE SORT BERDASARKAN ESTIMASI BIAYA]
+# [MATERI: SORTING - MANUAL BUBBLE SORT DENGAN OPTIMASI SWAPPED FLAG]
 def urutkan_perangkat_biaya(daftar_perangkat, tarif_per_kwh=1444.70, descending=True):
     """
     Mengurutkan perangkat berdasarkan biaya bulanan menggunakan Bubble Sort manual.
-    descending=True untuk mengurutkan dari yang paling boros ke paling hemat.
+    Dilengkapi optimasi flag swapped: jika tidak ada swap dalam satu putaran, loop berhenti (Best case O(n)).
     """
-    # Salin list agar tidak mengubah data asli secara langsung
     data = list(daftar_perangkat)
     n = len(data)
 
@@ -108,6 +169,7 @@ def urutkan_perangkat_biaya(daftar_perangkat, tarif_per_kwh=1444.70, descending=
 
     # [MATERI: NESTED LOOP PADA BUBBLE SORT]
     for i in range(n - 1):
+        swapped = False
         for j in range(0, n - i - 1):
             biaya_j = hitung_biaya(data[j])
             biaya_next = hitung_biaya(data[j + 1])
@@ -115,6 +177,10 @@ def urutkan_perangkat_biaya(daftar_perangkat, tarif_per_kwh=1444.70, descending=
             if kondisi:
                 # Swap elemen
                 data[j], data[j + 1] = data[j + 1], data[j]
+                swapped = True
+        # Optimasi: Jika array sudah terurut, hentikan iterasi lebih awal
+        if not swapped:
+            break
     return data
 
 # [MATERI: SORTING - MANUAL BUBBLE SORT BERDASARKAN VAMPIRE POWER]
@@ -125,12 +191,41 @@ def urutkan_perangkat_vampire(daftar_perangkat, descending=True):
     data = list(daftar_perangkat)
     n = len(data)
     for i in range(n - 1):
+        swapped = False
         for j in range(0, n - i - 1):
             val_a = data[j]["watt_standby"]
             val_b = data[j + 1]["watt_standby"]
             kondisi = (val_a < val_b) if descending else (val_a > val_b)
             if kondisi:
                 data[j], data[j + 1] = data[j + 1], data[j]
+                swapped = True
+        if not swapped:
+            break
+    return data
+
+# [MATERI: SORTING - MANUAL INSERTION SORT - DIKERJAKAN OLEH ANGGOTA 1]
+def urutkan_perangkat_watt_insertion(daftar_perangkat, descending=True):
+    """
+    Mengurutkan perangkat berdasarkan besar daya aktif (Watt) menggunakan Insertion Sort manual.
+    Algoritma ini menyisipkan elemen ke posisi yang tepat pada subarray yang telah terurut.
+    """
+    data = list(daftar_perangkat)
+    n = len(data)
+
+    for i in range(1, n):
+        key_item = data[i]
+        key_watt = key_item["watt_aktif"]
+        j = i - 1
+
+        while j >= 0:
+            kondisi = (data[j]["watt_aktif"] < key_watt) if descending else (data[j]["watt_aktif"] > key_watt)
+            if kondisi:
+                data[j + 1] = data[j]
+                j -= 1
+            else:
+                break
+        data[j + 1] = key_item
+
     return data
 
 # [MATERI: SORTING - MANUAL SELECTION SORT BERDASARKAN PRIORITAS]
@@ -156,8 +251,66 @@ def urutkan_perangkat_prioritas(daftar_perangkat):
 
 
 # ==============================================================================
-# [BAGIAN ANGGOTA 3: PERULANGAN BERSARANG (NESTED LOOP) & AUDIT LISTRIK]
+# [BAGIAN ANGGOTA 1 & 3: PERULANGAN BERSARANG & FITUR CERDAS ANTI-JEGLEK]
 # ==============================================================================
+
+# [FITUR UNGGULAN: SMART LOAD SHIFTING - DIKERJAKAN OLEH ANGGOTA 1]
+def rekomendasi_anti_jeglek(daftar_perangkat, batas_watt_aman, jam_overload, rincian_per_jam):
+    """
+    Menganalisis jam-jam overload dan memberikan rekomendasi cerdas pemindahan jam (Load Shifting)
+    untuk alat fleksibel berdaya besar agar beban turun di bawah batas aman tanpa mematikan alat.
+    """
+    if not jam_overload:
+        return
+
+    print("\n" + "="*85)
+    print(f"   {Warna.CYAN}{Warna.TEBAL}⚡ REKOMENDASI CERDAS ANTI-JEGLEK (SMART LOAD SHIFTING) ⚡{Warna.RESET}")
+    print("="*85)
+    print("Sistem menganalisis pergeseran jam pakai untuk mencegah MCB trip:")
+
+    for jam, watt, alat_nama_list in jam_overload:
+        kelebihan = watt - batas_watt_aman
+        print(f"\n[!] Kasus Jam {jam:02d}:00 (Beban {watt} W | Melebihi batas aman sebesar +{kelebihan} W):")
+
+        # Cari perangkat fleksibel (Sekunder/Tersier) dengan watt >= kelebihan atau watt besar
+        kandidat_geser = []
+        for p in daftar_perangkat:
+            if p["nama"] in alat_nama_list and p["prioritas"] in ["Sekunder", "Tersier"] and p["watt_aktif"] >= 200:
+                kandidat_geser.append(p)
+
+        # Urutkan kandidat dari watt terbesar
+        kandidat_geser.sort(key=lambda x: x["watt_aktif"], reverse=True)
+
+        if not kandidat_geser:
+            print("   -> Tidak ada perangkat fleksibel yang dapat digeser (semua berprioritas Primer).")
+            print("   -> Saran: Pertimbangkan upgrade daya meteran PLN ke golongan di atasnya.")
+            continue
+
+        alat_terpilih = kandidat_geser[0]
+        # Cari jam tujuan yang bebannya paling rendah di siang atau sore (di luar jam overload)
+        jam_tujuan_terbaik = None
+        beban_terendah = 99999
+
+        for j_target in range(8, 22):
+            if j_target != jam:
+                beban_j, _ = rincian_per_jam.get(j_target, (0, []))
+                # Cek apakah setelah dipindah beban target masih aman
+                if (beban_j + alat_terpilih["watt_aktif"]) <= (batas_watt_aman * 0.85):
+                    if beban_j < beban_terendah:
+                        beban_terendah = beban_j
+                        jam_tujuan_terbaik = j_target
+
+        if jam_tujuan_terbaik is not None:
+            beban_baru_asal = watt - alat_terpilih["watt_aktif"]
+            beban_baru_tujuan = beban_terendah + alat_terpilih["watt_aktif"]
+            print(f"   {Warna.HIJAU}💡 SOLUSI REKOMENDASI SISTEM:{Warna.RESET}")
+            print(f"   1. Geser pemakaian '{alat_terpilih['nama']}' ({alat_terpilih['watt_aktif']} W) dari Pk {jam:02d}:00 ke Pk {jam_tujuan_terbaik:02d}:00.")
+            print(f"   2. Hasil Simulasi Pk {jam:02d}:00: Beban turun dari {watt} W -> {Warna.HIJAU}{beban_baru_asal} W{Warna.RESET} (Bebas dari Jeglek!).")
+            print(f"   3. Kondisi Pk {jam_tujuan_terbaik:02d}:00: Beban naik menjadi {beban_baru_tujuan} W (Masih sangat aman di bawah {batas_watt_aman} W).")
+        else:
+            print(f"   💡 Saran: Hindari menyalakan '{alat_terpilih['nama']}' bersamaan dengan alat pemanas lainnya.")
+
+    print("="*85)
 
 # [MATERI: NESTED LOOP - SIMULASI BEBAN 24 JAM & ANTI-JEGLEK]
 def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
@@ -167,7 +320,7 @@ def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
     Inner Loop mengiterasi setiap perangkat yang aktif pada jam tersebut.
     """
     print("\n" + "="*85)
-    print("        SIMULASI MATRIKS BEBAN LISTRIK 24 JAM (DETEKTOR ANTI-JEGLEK)")
+    print(f"        {Warna.CYAN}{Warna.TEBAL}SIMULASI MATRIKS BEBAN LISTRIK 24 JAM (DETEKTOR ANTI-JEGLEK){Warna.RESET}")
     print(f"        Batas Daya Aman: {batas_watt_aman} Watt | Kapasitas Terpasang: {va_maks} VA")
     print("="*85)
     print(f"{'Jam':<7} | {'Beban (Watt)':<12} | {'Visualisasi Beban (ASCII Bar)':<35} | {'Status'}")
@@ -194,18 +347,18 @@ def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
         rincian_per_jam[jam] = (total_watt_jam, alat_menyala)
 
         # Gambar Grafik Bar ASCII
-        # Skala: 30 karakter maksimal
+        # Skala: 20 karakter bar
         persen = min(total_watt_jam / batas_watt_aman, 1.5)
         bar_len = int(persen * 20)
         bar_str = "█" * min(bar_len, 20) + "░" * max(0, 20 - bar_len)
 
         if total_watt_jam > batas_watt_aman:
-            status = " [!] OVERLOAD (RISIKO JEGLEK)"
+            status = f" {Warna.MERAH}{Warna.TEBAL}[!] OVERLOAD (RISIKO JEGLEK){Warna.RESET}"
             jam_overload.append((jam, total_watt_jam, alat_menyala))
         elif total_watt_jam > (batas_watt_aman * 0.8):
-            status = " [*] WASPADA (>80%)"
+            status = f" {Warna.KUNING}[*] WASPADA (>80%){Warna.RESET}"
         else:
-            status = " [v] AMAN"
+            status = f" {Warna.HIJAU}[v] AMAN{Warna.RESET}"
 
         print(f"{jam:02d}:00   | {total_watt_jam:>5} Watt    | [{bar_str:<20}] {int(persen*100):>3}% |{status}")
 
@@ -214,15 +367,16 @@ def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
     # Analisis dan Rekomendasi jika ada jam yang Jeglek
     if jam_overload:
         print("\n" + "!"*85)
-        print(" PERINGATAN POTENSI MCB TRIP (LISTRIK JEGLEK) DITEMUKAN!")
+        print(f" {Warna.MERAH}{Warna.TEBAL}PERINGATAN POTENSI MCB TRIP (LISTRIK JEGLEK) DITEMUKAN!{Warna.RESET}")
         print("!"*85)
         for jam, watt, alat in jam_overload:
-            print(f"-> Jam {jam:02d}:00 : Total Beban {watt} W melebihi kapasitas aman {batas_watt_aman} W.")
+            print(f"-> Jam {jam:02d}:00 : Total Beban {Warna.MERAH}{watt} W{Warna.RESET} melebihi kapasitas aman {batas_watt_aman} W.")
             print(f"   Alat yang menyala bersamaan: {', '.join(alat)}")
-            print("   Saran Tindakan: Hindari menyalakan alat daya besar (seperti Setrika/Rice Cooker/AC) secara bersamaan.")
-            print("                   Geser waktu pemakaian alat fleksibel ke jam dengan beban rendah.")
+
+        # Panggil fungsi rekomendasi anti-jeglek otomatis (Load Shifting)
+        rekomendasi_anti_jeglek(daftar_perangkat, batas_watt_aman, jam_overload, rincian_per_jam)
     else:
-        print("\n[v] KONDISI AMAN: Tidak ditemukan jam dengan potensi listrik jeglek.")
+        print(f"\n{Warna.HIJAU}[v] KONDISI AMAN: Tidak ditemukan jam dengan potensi listrik jeglek.{Warna.RESET}")
 
     return rincian_per_jam
 
