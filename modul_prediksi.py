@@ -248,6 +248,7 @@ def smart_budget_optimizer(daftar_perangkat, tarif_per_kwh=1444.70):
                     jam_dipangkas = jam_awal - p["jam_pakai"]
                     rupiah_hemat = (jam_dipangkas * (p["watt_aktif"] - p["watt_standby"]) / 1000.0) * 30 * tarif_per_kwh
                     rekomendasi_diet.append({
+                        "id": p["id"],
                         "nama": p["nama"],
                         "prioritas": p["prioritas"],
                         "jam_awal": jam_awal,
@@ -282,7 +283,7 @@ def smart_budget_optimizer(daftar_perangkat, tarif_per_kwh=1444.70):
         if konfirmasi == "y":
             for r in rekomendasi_diet:
                 for p in daftar_perangkat:
-                    if p["nama"] == r["nama"]:
+                    if p["id"] == r["id"]:
                         p["jam_pakai"] = r["jam_baru"]
                         if len(p.get("rentang_jam", [])) > r["jam_baru"]:
                             p["rentang_jam"] = p["rentang_jam"][:r["jam_baru"]]

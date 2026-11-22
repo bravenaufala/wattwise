@@ -1,0 +1,5 @@
+Timestamp|Aktivitas|Detail
+2026-11-22 18:14:04|UBAH|ID: EL04, Nama: Setrika, Ruangan: Kamar Tidur, Watt: 300W, Jam: 2h
+2026-11-22 18:15:34|UBAH|ID: EL04, Nama: Setrika Listrik, Ruangan: Kamar Tidur, Watt: 300W, Jam: 2h
+2026-11-22 18:17:33|TAMBAH|ID: EL07, Nama: Komputer Pribadi, Ruangan: Kamar Tidur, Watt: 700W, Jam: 8h, Prio: Tersier
+2026-11-22 18:17:56|HAPUS|ID: EL07, Nama: Komputer Pribadi, Ruangan: Kamar Tidur, Daya: 700W

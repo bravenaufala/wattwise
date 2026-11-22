@@ -268,14 +268,14 @@ def rekomendasi_anti_jeglek(daftar_perangkat, batas_watt_aman, jam_overload, rin
     print("="*85)
     print("Sistem menganalisis pergeseran jam pakai untuk mencegah MCB trip:")
 
-    for jam, watt, alat_nama_list in jam_overload:
+    for jam, watt, alat_id_list in jam_overload:
         kelebihan = watt - batas_watt_aman
         print(f"\n[!] Kasus Jam {jam:02d}:00 (Beban {watt} W | Melebihi batas aman sebesar +{kelebihan} W):")
 
         # Cari perangkat fleksibel (Sekunder/Tersier) dengan watt >= kelebihan atau watt besar
         kandidat_geser = []
         for p in daftar_perangkat:
-            if p["nama"] in alat_nama_list and p["prioritas"] in ["Sekunder", "Tersier"] and p["watt_aktif"] >= 200:
+            if p["id"] in alat_id_list and p["prioritas"] in ["Sekunder", "Tersier"] and p["watt_aktif"] >= 200:
                 kandidat_geser.append(p)
 
         # Urutkan kandidat dari watt terbesar
@@ -332,19 +332,25 @@ def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
     # [MATERI: NESTED LOOP - OUTER LOOP: ITERASI JAM 0-23]
     for jam in range(24):
         total_watt_jam = 0
-        alat_menyala = []
+        alat_id_list = []
+        alat_nama_list = []
 
         # [MATERI: NESTED LOOP - INNER LOOP: ITERASI SELURUH PERANGKAT]
         for p in daftar_perangkat:
             # Jika rentang_jam kosong atau jam termasuk rentang aktif
             if jam in p.get("rentang_jam", []):
                 total_watt_jam += p["watt_aktif"]
-                alat_menyala.append(p["nama"])
+                alat_id_list.append(p["id"])
+                alat_nama_list.append(p["nama"])
             else:
                 # Saat mati tapi kabel tertancap, menyerap daya standby
                 total_watt_jam += p.get("watt_standby", 0)
 
-        rincian_per_jam[jam] = (total_watt_jam, alat_menyala)
+        rincian_per_jam[jam] = (total_watt_jam, alat_nama_list)
+
+        # Simpan jam yang overload dengan ID perangkat untuk referensi matching
+        if total_watt_jam > batas_watt_aman:
+            jam_overload.append((jam, total_watt_jam, alat_id_list))
 
         # Gambar Grafik Bar ASCII
         # Skala: 20 karakter bar
@@ -352,10 +358,7 @@ def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
         bar_len = int(persen * 20)
         bar_str = "█" * min(bar_len, 20) + "░" * max(0, 20 - bar_len)
 
-        if total_watt_jam > batas_watt_aman:
-            status = f" {Warna.MERAH}{Warna.TEBAL}[!] OVERLOAD (RISIKO JEGLEK){Warna.RESET}"
-            jam_overload.append((jam, total_watt_jam, alat_menyala))
-        elif total_watt_jam > (batas_watt_aman * 0.8):
+        if total_watt_jam > (batas_watt_aman * 0.8):
             status = f" {Warna.KUNING}[*] WASPADA (>80%){Warna.RESET}"
         else:
             status = f" {Warna.HIJAU}[v] AMAN{Warna.RESET}"
@@ -369,9 +372,11 @@ def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
         print("\n" + "!"*85)
         print(f" {Warna.MERAH}{Warna.TEBAL}PERINGATAN POTENSI MCB TRIP (LISTRIK JEGLEK) DITEMUKAN!{Warna.RESET}")
         print("!"*85)
-        for jam, watt, alat in jam_overload:
+        for jam, watt, alat_id_list in jam_overload:
             print(f"-> Jam {jam:02d}:00 : Total Beban {Warna.MERAH}{watt} W{Warna.RESET} melebihi kapasitas aman {batas_watt_aman} W.")
-            print(f"   Alat yang menyala bersamaan: {', '.join(alat)}")
+            # Cari nama alat berdasarkan ID
+            nama_alat_list = [p["nama"] for p in daftar_perangkat if p["id"] in alat_id_list]
+            print(f"   Alat yang menyala bersamaan: {', '.join(nama_alat_list)}")
 
         # Panggil fungsi rekomendasi anti-jeglek otomatis (Load Shifting)
         rekomendasi_anti_jeglek(daftar_perangkat, batas_watt_aman, jam_overload, rincian_per_jam)

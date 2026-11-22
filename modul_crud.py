@@ -6,6 +6,7 @@
 # ==============================================================================
 
 import os
+from datetime import datetime
 
 # [MATERI: KELAS & KONSTANTA - ANSI ESCAPE COLORS UNTUK CLI]
 class Warna:
@@ -33,6 +34,7 @@ GOLONGAN_PLN = (
 
 FILE_PROFIL = "data_profil.txt"
 FILE_PERANGKAT = "data_perangkat.txt"
+FILE_LOG = "log_aktivitas.txt"
 
 # [MATERI: STRING MANIPULATION - SANITASI INPUT FILE]
 def sanitasi_string(teks):
@@ -43,6 +45,24 @@ def sanitasi_string(teks):
     if not teks:
         return ""
     return teks.replace("|", "/").strip()
+
+def cari_perangkat_duplikat(daftar_perangkat, nama, ruangan, id_dikecualikan=None):
+    """Mencari perangkat dengan kombinasi nama & ruangan yang sama
+    (tidak membedakan huruf besar/kecil maupun spasi berlebih)."""
+    def normalisasi(teks):
+        return " ".join(sanitasi_string(teks).split()).casefold()
+
+    nama_normal = normalisasi(nama)
+    ruang_normal = normalisasi(ruangan)
+
+    for perangkat in daftar_perangkat:
+        if id_dikecualikan and perangkat["id"] == id_dikecualikan:
+            continue
+        if (normalisasi(perangkat["nama"]) == nama_normal
+                and normalisasi(perangkat["ruangan"]) == ruang_normal):
+            return perangkat
+
+    return None
 
 # [MATERI: STRING MANIPULATION - PARSING RENTANG JAM FLEKSIBEL]
 def parse_rentang_jam(input_str):
@@ -180,6 +200,61 @@ def simpan_semua_perangkat(daftar_perangkat):
             baris = f"{p['id']}|{p['nama']}|{p['ruangan']}|{p['watt_aktif']}|{p['watt_standby']}|{p['jam_pakai']}|{rentang_jam_str}|{p['prioritas']}\n"
             f.write(baris)
 
+# [MATERI: FILE HANDLING - APPEND MODE 'a' UNTUK AUDIT TRAIL]
+def catat_log_aktivitas(aktivitas, detail):
+    """
+    Mencatat riwayat aktivitas perubahan data (TAMBAH / UBAH / HAPUS) ke log_aktivitas.txt
+    menggunakan File Handling mode append ('a') disertai timestamp tanggal dan waktu.
+    """
+    file_ada = os.path.exists(FILE_LOG)
+    waktu_sekarang = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with open(FILE_LOG, "a", encoding="utf-8") as f:
+            if not file_ada:
+                f.write("Timestamp|Aktivitas|Detail\n")
+            f.write(f"{waktu_sekarang}|{aktivitas}|{sanitasi_string(detail)}\n")
+    except Exception as e:
+        print(f"{Warna.MERAH}[!] Gagal mencatat log aktivitas: {e}{Warna.RESET}")
+
+# [MATERI: FILE HANDLING - READ MODE 'r' UNTUK AUDIT TRAIL]
+def lihat_log_aktivitas():
+    """Membaca dan menampilkan log audit trail dari log_aktivitas.txt ke terminal."""
+    if not os.path.exists(FILE_LOG):
+        print(f"\n{Warna.KUNING}[i] Belum ada riwayat aktivitas yang tercatat di {FILE_LOG}.{Warna.RESET}")
+        return
+
+    print("\n" + "="*85)
+    print(f"             {Warna.CYAN}{Warna.TEBAL}RIWAYAT LOG AKTIVITAS (AUDIT TRAIL - log_aktivitas.txt){Warna.RESET}")
+    print("="*85)
+    try:
+        with open(FILE_LOG, "r", encoding="utf-8") as f:
+            baris_list = f.readlines()
+    except Exception as e:
+        print(f"{Warna.MERAH}[!] Gagal membaca file log: {e}{Warna.RESET}")
+        return
+
+    if len(baris_list) <= 1:
+        print(f"{Warna.KUNING}[i] File log aktivitas masih kosong.{Warna.RESET}")
+        print("="*85)
+        return
+
+    print(f"{'No':<4} | {'Timestamp':<19} | {'Aktivitas':<10} | {'Detail':<45}")
+    print("-" * 85)
+    count = 0
+    for b in baris_list[1:]:
+        b = b.strip()
+        if not b:
+            continue
+        parts = b.split("|")
+        if len(parts) >= 3:
+            count += 1
+            ts = parts[0]
+            aksi = parts[1]
+            detail = "|".join(parts[2:])
+            warna_aksi = Warna.HIJAU if aksi == "TAMBAH" else (Warna.MERAH if aksi == "HAPUS" else Warna.KUNING)
+            print(f"{count:<4} | {ts:<19} | {warna_aksi}{aksi:<10}{Warna.RESET} | {detail}")
+    print("="*85)
+
 # [MATERI: FUNGSI BANTU GENERATE ID]
 def generate_id_baru(daftar_perangkat):
     """Menghasilkan ID unik berurutan seperti EL01, EL02, dst."""
@@ -216,6 +291,17 @@ def tambah_perangkat(daftar_perangkat):
     ruangan = sanitasi_string(ruang_raw).title()
     if not ruangan:
         ruangan = "Umum"
+
+    # Periksa duplikat berdasarkan kombinasi nama & ruangan
+    duplikat = cari_perangkat_duplikat(daftar_perangkat, nama, ruangan)
+    if duplikat:
+        konfirmasi = input(
+            f"{Warna.KUNING}[!] Perangkat dengan nama tersebut sudah ada di "
+            f"{duplikat['ruangan']}. Tetap tambahkan? (y/n): {Warna.RESET}"
+        ).strip().lower()
+        if konfirmasi != "y":
+            print(f"{Warna.KUNING}[*] Penambahan perangkat dibatalkan.{Warna.RESET}")
+            return
 
     try:
         watt_aktif = int(input("Daya Aktif saat Menyala (Watt): "))
@@ -279,17 +365,27 @@ def tambah_perangkat(daftar_perangkat):
     daftar_perangkat.append(perangkat_baru)
     simpan_semua_perangkat(daftar_perangkat)
 
+    # [MATERI: FILE HANDLING - PENCATATAN AUDIT TRAIL]
+    catat_log_aktivitas(
+        "TAMBAH",
+        f"ID: {id_baru}, Nama: {nama}, Ruangan: {ruangan}, Watt: {watt_aktif}W, Jam: {jam_pakai}h, Prio: {prioritas}"
+    )
+
     print(f"\n{Warna.HIJAU}[OK] Perangkat '{nama}' berhasil ditambahkan dengan ID {id_baru}!{Warna.RESET}")
 
 # [FITUR CRUD: 2. READ - Dikerjakan oleh Anggota 1]
-def tampilkan_tabel_perangkat(daftar_perangkat, tarif_per_kwh=1444.70):
+def tampilkan_tabel_perangkat(daftar_perangkat, tarif_per_kwh=1444.70, judul_filter=None):
     """Menampilkan tabel inventaris perangkat elektronik beserta perhitungan biaya bulanan & kontribusi beban."""
     if not daftar_perangkat:
         print(f"\n{Warna.KUNING}[i] Belum ada data perangkat. Silakan tambahkan perangkat terlebih dahulu.{Warna.RESET}")
         return
 
+    judul = "DAFTAR INVENTARIS PERANGKAT ELEKTRONIK"
+    if judul_filter:
+        judul += f" (RUANGAN: {judul_filter.upper()})"
+
     print("\n" + "="*115)
-    print(f"                             {Warna.CYAN}{Warna.TEBAL}DAFTAR INVENTARIS PERANGKAT ELEKTRONIK{Warna.RESET}")
+    print(f"{Warna.CYAN}{Warna.TEBAL}{judul:^115}{Warna.RESET}")
     print("="*115)
     print(f"{'ID':<6} | {'Nama Alat':<20} | {'Ruangan':<14} | {'Watt':<6} | {'Jam':<4} | {'kWh/Bulan':<10} | {'Biaya/Bulan':<16} | {'% Beban':<7} | {'Prioritas':<9}")
     print("-"*115)
@@ -323,7 +419,7 @@ def tampilkan_tabel_perangkat(daftar_perangkat, tarif_per_kwh=1444.70):
 
 # [FITUR CRUD: 3. UPDATE - Dikerjakan oleh Anggota 2 & Anggota 1]
 def ubah_perangkat(daftar_perangkat):
-    """Mengubah data perangkat yang sudah ada berdasarkan ID, termasuk rentang jam operasional."""
+    """Mengubah data perangkat yang sudah ada berdasarkan ID, termasuk konfirmasi Before vs After Diff."""
     if not daftar_perangkat:
         print(f"\n{Warna.KUNING}[i] Data perangkat masih kosong.{Warna.RESET}")
         return
@@ -344,65 +440,137 @@ def ubah_perangkat(daftar_perangkat):
         print(f"{Warna.MERAH}[!] Perangkat dengan ID '{id_target}' tidak ditemukan!{Warna.RESET}")
         return
 
-    p = daftar_perangkat[target_idx]
-    rentang_lama_str = ",".join(str(j) for j in sorted(p.get("rentang_jam", [])))
+    p_lama = daftar_perangkat[target_idx]
+    # Siapkan salinan dictionary agar data lama tidak langsung termutasi
+    p_baru = dict(p_lama)
+    p_baru["rentang_jam"] = list(p_lama.get("rentang_jam", []))
+
+    rentang_lama_str = ",".join(str(j) for j in sorted(p_lama.get("rentang_jam", [])))
     print(f"\nData Saat Ini:")
-    print(f"Nama        : {p['nama']}")
-    print(f"Ruangan     : {p['ruangan']}")
-    print(f"Watt Aktif  : {p['watt_aktif']} W")
-    print(f"Watt Stdby  : {p['watt_standby']} W")
-    print(f"Jam Pakai   : {p['jam_pakai']} Jam/Hari")
+    print(f"Nama        : {p_lama['nama']}")
+    print(f"Ruangan     : {p_lama['ruangan']}")
+    print(f"Watt Aktif  : {p_lama['watt_aktif']} W")
+    print(f"Watt Stdby  : {p_lama['watt_standby']} W")
+    print(f"Jam Pakai   : {p_lama['jam_pakai']} Jam/Hari")
     print(f"Rentang Jam : {rentang_lama_str or '(kosong)'}")
-    print(f"Prioritas   : {p['prioritas']}")
+    print(f"Prioritas   : {p_lama['prioritas']}")
     print("-" * 50)
     print("Tekan ENTER langsung jika tidak ingin mengubah field tertentu.")
 
-    nama_baru = sanitasi_string(input(f"Nama Baru [{p['nama']}]: "))
-    if nama_baru:
-        p["nama"] = nama_baru
+    nama_baru = sanitasi_string(input(f"Nama Baru [{p_lama['nama']}]: "))
+    ruang_baru = sanitasi_string(input(f"Ruangan Baru [{p_lama['ruangan']}]: ")).title()
 
-    ruang_baru = sanitasi_string(input(f"Ruangan Baru [{p['ruangan']}]: ")).title()
-    if ruang_baru:
-        p["ruangan"] = ruang_baru
+    nama_final = nama_baru if nama_baru else p_lama["nama"]
+    ruang_final = ruang_baru if ruang_baru else p_lama["ruangan"]
 
-    watt_input = input(f"Watt Aktif Baru [{p['watt_aktif']}]: ").strip()
+    if nama_baru or ruang_baru:
+        duplikat = cari_perangkat_duplikat(
+            daftar_perangkat, nama_final, ruang_final, id_dikecualikan=p_lama["id"]
+        )
+        if duplikat:
+            konfirmasi_dup = input(
+                f"{Warna.KUNING}[!] Perangkat dengan nama tersebut sudah ada di "
+                f"{duplikat['ruangan']} (ID {duplikat['id']}). Tetap simpan? (y/n): {Warna.RESET}"
+            ).strip().lower()
+            if konfirmasi_dup != "y":
+                print(f"{Warna.KUNING}[*] Perubahan dibatalkan.{Warna.RESET}")
+                return
+
+    p_baru["nama"] = nama_final
+    p_baru["ruangan"] = ruang_final
+
+    watt_input = input(f"Watt Aktif Baru [{p_lama['watt_aktif']}]: ").strip()
     if watt_input.isdigit() and int(watt_input) > 0:
-        p["watt_aktif"] = int(watt_input)
+        p_baru["watt_aktif"] = int(watt_input)
 
-    standby_input = input(f"Watt Standby Baru [{p['watt_standby']}]: ").strip()
+    standby_input = input(f"Watt Standby Baru [{p_lama['watt_standby']}]: ").strip()
     if standby_input.isdigit() and int(standby_input) >= 0:
-        p["watt_standby"] = int(standby_input)
+        p_baru["watt_standby"] = int(standby_input)
 
     rentang_input = input(f"Rentang Jam Baru (cth: 6,18,19 atau 8-12) [{rentang_lama_str}]: ").strip()
     if rentang_input:
         jam_baru_list = parse_rentang_jam(rentang_input)
-        p["rentang_jam"] = jam_baru_list
-        p["jam_pakai"] = len(jam_baru_list)
-        print(f"[*] Rentang jam dan durasi pemakaian diperbarui ({len(jam_baru_list)} jam).")
+        p_baru["rentang_jam"] = jam_baru_list
+        p_baru["jam_pakai"] = len(jam_baru_list)
+        print(f"[*] Rentang jam dan durasi pemakaian disesuaikan ({len(jam_baru_list)} jam).")
     else:
-        jam_input = input(f"Durasi Jam Pakai Baru [{p['jam_pakai']}]: ").strip()
+        jam_input = input(f"Durasi Jam Pakai Baru [{p_lama['jam_pakai']}]: ").strip()
         if jam_input.isdigit():
             jam_val = int(jam_input)
             if 0 <= jam_val <= 24:
-                p["jam_pakai"] = jam_val
+                p_baru["jam_pakai"] = jam_val
 
-    prio_input = input(f"Prioritas Baru (Primer/Sekunder/Tersier) [{p['prioritas']}]: ").strip().title()
+    prio_input = input(f"Prioritas Baru (Primer/Sekunder/Tersier) [{p_lama['prioritas']}]: ").strip().title()
     if prio_input in ["Primer", "Sekunder", "Tersier"]:
-        p["prioritas"] = prio_input
+        p_baru["prioritas"] = prio_input
 
-    simpan_semua_perangkat(daftar_perangkat)
-    print(f"\n{Warna.HIJAU}[OK] Perangkat ID '{p['id']}' berhasil diperbarui!{Warna.RESET}")
+    # [FITUR: RINGKASAN PERUBAHAN SEBELUM VS SESUDAH (BEFORE VS AFTER DIFF)]
+    rentang_lama_format = ",".join(str(j) for j in sorted(p_lama.get("rentang_jam", []))) or "(kosong)"
+    rentang_baru_format = ",".join(str(j) for j in sorted(p_baru.get("rentang_jam", []))) or "(kosong)"
+
+    print("\n" + "="*50)
+    print(f"       {Warna.CYAN}{Warna.TEBAL}Ringkasan Perubahan:{Warna.RESET}")
+    print("="*50)
+
+    # Periksa dan tampilkan perbandingan tiap atribut
+    if p_lama["nama"] != p_baru["nama"]:
+        print(f"- Nama        : {p_lama['nama']} -> {p_baru['nama']} {Warna.KUNING}(Berubah){Warna.RESET}")
+    else:
+        print(f"- Nama        : {p_lama['nama']} (Tetap)")
+
+    if p_lama["ruangan"] != p_baru["ruangan"]:
+        print(f"- Ruangan     : {p_lama['ruangan']} -> {p_baru['ruangan']} {Warna.KUNING}(Berubah){Warna.RESET}")
+    else:
+        print(f"- Ruangan     : {p_lama['ruangan']} (Tetap)")
+
+    if p_lama["watt_aktif"] != p_baru["watt_aktif"]:
+        print(f"- Watt Aktif  : {p_lama['watt_aktif']} W -> {p_baru['watt_aktif']} W {Warna.KUNING}(Berubah){Warna.RESET}")
+    else:
+        print(f"- Watt Aktif  : {p_lama['watt_aktif']} W (Tetap)")
+
+    if p_lama["watt_standby"] != p_baru["watt_standby"]:
+        print(f"- Watt Standby: {p_lama['watt_standby']} W -> {p_baru['watt_standby']} W {Warna.KUNING}(Berubah){Warna.RESET}")
+    else:
+        print(f"- Watt Standby: {p_lama['watt_standby']} W (Tetap)")
+
+    if p_lama["jam_pakai"] != p_baru["jam_pakai"]:
+        print(f"- Jam Pakai   : {p_lama['jam_pakai']} Jam -> {p_baru['jam_pakai']} Jam {Warna.KUNING}(Berubah){Warna.RESET}")
+    else:
+        print(f"- Jam Pakai   : {p_lama['jam_pakai']} Jam (Tetap)")
+
+    if sorted(p_lama.get("rentang_jam", [])) != sorted(p_baru.get("rentang_jam", [])):
+        print(f"- Rentang Jam : {rentang_lama_format} -> {rentang_baru_format} {Warna.KUNING}(Berubah){Warna.RESET}")
+    else:
+        print(f"- Rentang Jam : {rentang_lama_format} (Tetap)")
+
+    if p_lama["prioritas"] != p_baru["prioritas"]:
+        print(f"- Prioritas   : {p_lama['prioritas']} -> {p_baru['prioritas']} {Warna.KUNING}(Berubah){Warna.RESET}")
+    else:
+        print(f"- Prioritas   : {p_lama['prioritas']} (Tetap)")
+
+    print("="*50)
+    konfirmasi = input(f"{Warna.TEBAL}Simpan perubahan ke file? (y/n): {Warna.RESET}").strip().lower()
+
+    if konfirmasi == "y":
+        daftar_perangkat[target_idx] = p_baru
+        simpan_semua_perangkat(daftar_perangkat)
+        catat_log_aktivitas(
+            "UBAH",
+            f"ID: {p_baru['id']}, Nama: {p_baru['nama']}, Ruangan: {p_baru['ruangan']}, Watt: {p_baru['watt_aktif']}W, Jam: {p_baru['jam_pakai']}h"
+        )
+        print(f"\n{Warna.HIJAU}[OK] Perangkat ID '{p_baru['id']}' berhasil diperbarui dan disimpan ke file!{Warna.RESET}")
+    else:
+        print(f"\n{Warna.KUNING}[*] Perubahan dibatalkan. Data lama tetap dipertahankan.{Warna.RESET}")
 
 # [FITUR CRUD: 4. DELETE - Dikerjakan oleh Anggota 2]
-# [TODO: Refine Anggota 2 - Tambahkan konfirmasi penghapusan (Y/N) dengan rincian nama alat]
 def hapus_perangkat(daftar_perangkat):
-    """Menghapus perangkat dari daftar dan memperbarui file data_perangkat.txt."""
+    """Menghapus perangkat dari daftar dan memperbarui file data_perangkat.txt serta mencatat audit trail."""
     if not daftar_perangkat:
-        print("\n[i] Data perangkat masih kosong.")
+        print(f"\n{Warna.KUNING}[i] Data perangkat masih kosong.{Warna.RESET}")
         return
 
     print("\n" + "="*50)
-    print("            HAPUS DATA PERANGKAT")
+    print(f"            {Warna.CYAN}{Warna.TEBAL}HAPUS DATA PERANGKAT{Warna.RESET}")
     print("="*50)
     id_target = input("Masukkan ID Perangkat yang akan dihapus (cth: EL01): ").strip().upper()
 
@@ -413,16 +581,23 @@ def hapus_perangkat(daftar_perangkat):
             break
 
     if target_idx == -1:
-        print(f"[!] Perangkat dengan ID '{id_target}' tidak ditemukan!")
+        print(f"{Warna.MERAH}[!] Perangkat dengan ID '{id_target}' tidak ditemukan!{Warna.RESET}")
         return
 
     perangkat_dihapus = daftar_perangkat[target_idx]
-    konfirmasi = input(f"Apakah Anda yakin ingin menghapus '{perangkat_dihapus['nama']}' ({perangkat_dihapus['id']})? (y/n): ").strip().lower()
+    konfirmasi = input(
+        f"Apakah Anda yakin ingin menghapus '{perangkat_dihapus['nama']}' "
+        f"({perangkat_dihapus['id']} - {perangkat_dihapus['ruangan']})? (y/n): "
+    ).strip().lower()
 
     if konfirmasi == "y":
         # [MATERI: LIST - POP / REMOVE]
-        daftar_perangkat.pop(target_idx)
+        dihapus = daftar_perangkat.pop(target_idx)
         simpan_semua_perangkat(daftar_perangkat)
-        print(f"\n[OK] Perangkat '{perangkat_dihapus['nama']}' berhasil dihapus!")
+        catat_log_aktivitas(
+            "HAPUS",
+            f"ID: {dihapus['id']}, Nama: {dihapus['nama']}, Ruangan: {dihapus['ruangan']}, Daya: {dihapus['watt_aktif']}W"
+        )
+        print(f"\n{Warna.HIJAU}[OK] Perangkat '{dihapus['nama']}' ({dihapus['id']}) berhasil dihapus dan dicatat di log aktivitas!{Warna.RESET}")
     else:
-        print("[*] Penghapusan dibatalkan.")
+        print(f"\n{Warna.KUNING}[*] Penghapusan dibatalkan.{Warna.RESET}")
