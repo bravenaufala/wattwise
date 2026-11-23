@@ -21,9 +21,49 @@ EL06   | Dispenser Air          | Dapur        | 350    | 4    | Rp 82.347,90
 ---------------------------------------------------------------------------
 TOTAL ESTIMASI BIAYA LISTRIK : Rp 490.446,76 / Bulan
 TOTAL KONSUMSI LISTRIK       : 339.48 kWh / Bulan
+ESTIMASI EMISI CO2           : 288.56 kg / Bulan
+ESTIMASI KEBUTUHAN POHON     : 158 pohon (ekuivalen tahunan)
 POTENSI RUGI VAMPIRE POWER   : Rp 882.076,03 / Tahun
 
 CATATAN AUDITOR:
 - Matikan alat elektronika saat jam beban puncak (18:00 - 21:00).
 - Cabut stopkontak perangkat yang memiliki daya standby tinggi.
+===========================================================================
+
+===========================================================================
+HASIL SIMULASI BEBAN LISTRIK 24 JAM
+===========================================================================
+JAM       |BEBAN ( WATT ) |VISUALISASI              |STATUS    
+===========================================================================
+00:00      | 577            : | #####                     | AMAN
+01:00      | 577            : | #####                     | AMAN
+02:00      | 577            : | #####                     | AMAN
+03:00      | 577            : | #####                     | AMAN
+04:00      | 577            : | #####                     | AMAN
+05:00      | 205            : | #                         | AMAN
+06:00      | 890            : | ########                  | WASPADA
+07:00      | 530            : | ####                      | AMAN
+08:00      | 205            : | #                         | AMAN
+09:00      | 205            : | #                         | AMAN
+10:00      | 205            : | #                         | AMAN
+11:00      | 205            : | #                         | AMAN
+12:00      | 530            : | ####                      | AMAN
+13:00      | 205            : | #                         | AMAN
+14:00      | 205            : | #                         | AMAN
+15:00      | 205            : | #                         | AMAN
+16:00      | 205            : | #                         | AMAN
+17:00      | 273            : | ##                        | AMAN
+18:00      | 983            : | ########                  | WASPADA
+19:00      | 1308           : | ###########               | OVERLOAD
+20:00      | 273            : | ##                        | AMAN
+21:00      | 645            : | #####                     | AMAN
+22:00      | 577            : | #####                     | AMAN
+23:00      | 577            : | #####                     | AMAN
+---------------------------------------------------------------------------
+
+CATATAN PERINGATAN ANTI JEGLEK
+[!] PERINGATAN: DITEMUKAN JAM OVERLOAD!
+-Jam 19:00: 1308 Watt
+ Perangkat menyala : Kulkas 2 Pintu, Rice Cooker, TV LED 43 Inch, Setrika Listrik, Dispenser Air
+REKOMENDASI: Kurangi atau geser penggunaanperangkat berdaya besar ke jam yang lebih aman.
 ===========================================================================

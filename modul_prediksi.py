@@ -39,6 +39,54 @@ def muat_riwayat_token():
                 continue
     return riwayat
 
+def tampilkan_grafik_sisa_token():
+    """
+    Menampilkan grafik ASCII sisa token dari 3 transaksi terakhir
+    """
+    riwayat = muat_riwayat_token()
+
+    if not riwayat:
+        print("\n[!]Belum ada riwayat pengisian token.")
+        return
+
+    tiga_transaksi = riwayat[-3:]
+
+    # Hitung sisa token setelah setiap pengisian
+    data_grafik = []
+    for transaksi in tiga_transaksi:
+        sisa_token = (
+            transaksi["sisa_sebelum"] + transaksi["kwh_didapat"]
+        )
+
+        data_grafik.append({
+            "tanggal": transaksi["tanggal"],
+            "nominal": transaksi["nominal"],
+            "sisa": sisa_token
+        })
+
+    nilai_maksimal = max(item["sisa"] for item in data_grafik)
+
+    print("\n" + "=" * 65)
+    print("     GRAFIK SISA TOKEN LISTRIK - 3 UP TERAKHIR")
+    print("="*65)
+
+    for item in data_grafik:
+        if nilai_maksimal > 0:
+            panjang_bar = int(
+                (item["sisa"] / nilai_maksimal)*30
+            )
+        else:
+            panjang_bar = 0 
+
+        grafik = "#" * panjang_bar
+
+        print(f"\nTanggal   : {item['tanggal']}")
+        print(f"Top up      : Rp{item['nominal']:,}")
+        print(f"sisa        : {item['sisa']:.2f} kwh")
+        print(f"[{grafik}]")
+
+    print("\n" + "=" * 65)
+
 # [FITUR BARU ANGGOTA 1: TRANSAKSI & PENCATATAN FILE RIWAYAT TOKEN]
 def beli_token_listrik(profil_rumah, nominal_rp):
     """

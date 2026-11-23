@@ -380,6 +380,103 @@ def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
 
     return rincian_per_jam
 
+#SMART BUDGET OPTIMIZER - GREEDY ALGORITHM
+def smart_budget_optimizer(daftar_perangkat, anggaran_maksimal, tarif_per_kwh):
+    """
+    Mengoptimalkan biaya listrik menggunakan algoritma Greedy.
+    Perangkat yang ID-nya dikecualikan tidak akan dikurangi jam pakainya.
+    """
+    print("\n" + "="*75)
+    print("     SMART BUDGET OPTIMIZER - GREEDY ALGORTIHM")
+    print("="*75)
+
+    # Salin data agar data perangkat asli tidak berubah
+    perangkat_hasil = [p.copy() for p in daftar_perangkat]
+
+    # Input ID perangkat yang tidak boleh dikurangi jam pakainya
+    input_id = input(
+        "Masukan ID perangkat yang dikecualikan (pisahkan dengan koma): "
+    )
+
+    daftar_id_dikecualikan = [
+        item.strip() for item in input_id.split(",") if item.strip()
+    ]
+
+    print(f"\nID yang dikecualikan: {daftar_id_dikecualikan}")
+
+    # Menghitung total biaya bulanan
+    def hitung_total_biaya():
+        total = 0
+
+        for p in perangkat_hasil:
+            kwh = (
+                (p["watt_aktif"] * p["jam_pakai"]) + (p["watt_standby"] * (24 - p["jam_pakai"]))
+            ) * 30 / 1000
+
+            total += kwh * tarif_per_kwh
+
+        return total
+
+    biaya_awal = hitung_total_biaya()
+    biaya_sekarang = biaya_awal
+
+    print(f"\nBiaya awal        : {format_rupiah(biaya_awal)}")
+    print(f"Target anggaran     : {format_rupiah(anggaran_maksimal)}")
+
+    #GREEDY: Kurangi jam dari perangkat dengan penghematan terbesar
+    while biaya_sekarang > anggaran_maksimal:
+        
+        kandidat = []
+
+        for p in perangkat_hasil:
+            # Lewati perangkat yang dikecualikan
+            if str(p["id"]) in daftar_id_dikecualikan:
+                continue
+            # Jam pakai tidak boleh kurang dari nol
+            if p["Jam_pakai"] <= 0:
+                continue
+            # Penghematan biaya jika jam aktif dikurangi 1 jam
+            hemat = (
+                (p["watt_aktif"] - p["watt_standby"])
+                * 300 / 1000
+                * tarif_per_kwh
+            )
+
+            if hemat > 0:
+                kandidat.append((hemat, p))
+
+        # Tidak ada perangkat yang bisa dikurangi lagi
+        if not kandidat:
+            break
+
+        # Pilih perangkat dengan penghematan terbesar
+        kandidat.sort(key=lambda x: x[0], reverse=True)
+
+        hemat_terbesar, alat = kandidat[0]
+
+        alat["jam_pakai"] -= 1
+        biaya_sekarang = hitung_total_biaya()
+
+        print(
+            f"-> ID {alat['id']} ({alat['nama']})"
+            f"jam pakai dikurangi menjadi {alat['jam_pakai']} jam"
+        )
+    #Laporan hasil estimasi
+    print("\n" + "="*75)
+    print(f"biaya sebelum optimasi : {format_rupiah(biaya_awal)}")
+    print(f"biaya setelah optimasi : {format_rupiah(biaya_sekarang)}")
+    print(f"total penghematan : {format_rupiah(biaya_awal-biaya_sekarang)}")
+
+    if biaya_sekarang <= anggaran_maksimal:
+        print("[BERHASIL] Anggaran berhasil dicapai!")
+    else:
+        print("[PERINGATAN] Anggaran belum tercapai.")
+        print("Perangkat yang tersisa tidak dapat dikurangi lagi atau dikecualikan.")
+
+    print("="*75)
+
+    return perangkat_hasil 
+
 # [MATERI: NESTED LOOP - AUDIT PER RUANGAN X PERANGKAT]
 def audit_per_ruangan(daftar_perangkat, tarif_per_kwh=1444.70):
     """
@@ -455,6 +552,23 @@ def analisis_vampire_power(daftar_perangkat, tarif_per_kwh=1444.70):
     print("             atau gunakan stopkontak switch on/off agar tidak ada arus standby.")
     print("="*85)
 
+# [MATERI: GREEN COMPUTING - KALKULATOR EMISI KARBON]
+def hitung_emisi_karbon(total_kwh_bulan):
+    """
+    Menghitung emisi CO2 listrik bulanan
+    berdasarkan faktor emisi 0.85 kg CO2/KWH.
+    """
+    emisi_co2 = total_kwh_bulan * 0.85
+
+    #Asumsi penyerapan pohon dewasa:
+    #Sekitar 22 kg CO2 per tahun.
+    emisi_tahunan = emisi_co2 * 12
+    jumlah_pohon = int(emisi_tahunan / 22) + (
+        1 if emisi_tahunan % 22 > 0 else 0
+    )
+
+    return emisi_co2, jumlah_pohon
+
 # [MATERI: FILE HANDLING - EXPORT LAPORAN AUDIT KE FILE .TXT]
 def export_laporan_audit(daftar_perangkat, profil_rumah, nama_file="laporan_audit.txt"):
     """
@@ -498,10 +612,83 @@ def export_laporan_audit(daftar_perangkat, profil_rumah, nama_file="laporan_audi
     lines.append("-"*75 + "\n")
     lines.append(f"TOTAL ESTIMASI BIAYA LISTRIK : {format_rupiah(total_biaya_bulan)} / Bulan\n")
     lines.append(f"TOTAL KONSUMSI LISTRIK       : {total_kwh_bulan:.2f} kWh / Bulan\n")
+    emisi, pohon = hitung_emisi_karbon(total_kwh_bulan)
+    lines.append(f"ESTIMASI EMISI CO2           : {emisi:.2f} kg / Bulan\n")
+    lines.append(f"ESTIMASI KEBUTUHAN POHON     : {pohon} pohon (ekuivalen tahunan)\n")
     lines.append(f"POTENSI RUGI VAMPIRE POWER   : {format_rupiah(total_vampire_rugi)} / Tahun\n\n")
     lines.append("CATATAN AUDITOR:\n")
     lines.append("- Matikan alat elektronika saat jam beban puncak (18:00 - 21:00).\n")
     lines.append("- Cabut stopkontak perangkat yang memiliki daya standby tinggi.\n")
+    lines.append("="*75 + "\n")
+
+    #Hasil simulasi beban listrik 24 jam
+    lines.append("\n")
+    lines.append("="*75 + "\n")
+    lines.append("HASIL SIMULASI BEBAN LISTRIK 24 JAM\n")
+    lines.append("="*75 + "\n")
+
+    #Mengambil hasil simulasi 24 jam
+    rincian_simulasi = simulasi_beban_24jam(
+        daftar_perangkat, 
+        batas_watt_aman=batas
+    )
+
+    lines.append(
+        f"{'JAM':<10}|{'BEBAN ( WATT )':<15}|{'VISUALISASI':<25}|{'STATUS':<10}\n"
+    )
+
+    lines.append("="*75 + "\n")
+    
+    jam_overload_laporan = []
+
+    for jam in range(24):
+        total_watt, alat_menyala = rincian_simulasi [jam]
+
+        #Membuat grafik batang ASCII
+        bar_len = min(int((total_watt / batas)*10),25)
+        grafik = "#" * bar_len
+
+        if total_watt > batas:
+            status = "OVERLOAD"
+            jam_overload_laporan.append(
+                (jam, total_watt, alat_menyala)
+            )
+        elif total_watt > batas * 0.8:
+            status = "WASPADA"
+        else:
+            status = "AMAN"
+
+        lines.append(
+            f"{f'{jam:02d}:00':<10} | {total_watt:<15}: | {grafik:<25} | {status}\n"
+        )
+
+    lines.append("-"*75 + "\n")
+
+    #CATATAN PERINGATAN ANTI-JEGLEK
+    lines.append("\nCATATAN PERINGATAN ANTI JEGLEK\n")
+
+    if jam_overload_laporan:
+        lines.append(
+            "[!] PERINGATAN: DITEMUKAN JAM OVERLOAD!\n"
+        )
+
+        for jam, watt, alat in jam_overload_laporan:
+            lines.append(
+                f"-Jam {jam:02d}:00: {watt} Watt\n"
+            )
+            lines.append(
+                f" Perangkat menyala : {', '.join(alat)}\n"
+            )
+        
+        lines.append(
+            "REKOMENDASI: Kurangi atau geser penggunaan"
+            "perangkat berdaya besar ke jam yang lebih aman.\n"
+        )
+    else:
+        lines.append(
+            "[OK] Tidak ditemukan beban listrik yang melebihi batas aman.\n"
+        )
+    
     lines.append("="*75 + "\n")
 
     try:
