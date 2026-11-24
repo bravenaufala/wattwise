@@ -53,6 +53,7 @@ wattwise_project/
 │
 ├── data_profil.txt    # Konfigurasi daya PLN rumah & sisa token kWh
 ├── data_perangkat.txt # Database inventaris alat elektronik (delimiter '|')
+├── log_aktivitas.txt  # Audit trail pencatatan aktivitas tambah, ubah, dan hapus perangkat
 ├── riwayat_token.txt  # Histori pembelian dan pengisian token listrik
 ├── laporan_audit.txt  # File hasil export laporan resmi audit listrik
 └── README.md          # Dokumentasi teknis & panduan tanya-jawab presentasi
@@ -70,7 +71,7 @@ wattwise_project/
 | **4** | **Fungsi Rekursif (Recursion)** | Pencarian ID perangkat dengan Binary Search secara rekursif murni (Base case & Recursive step) dengan kompleksitas $O(\log n)$ | `modul_analisis.py` (`binary_search_rekursif`, `cari_perangkat_id_binary`) |
 | **5** | **Searching & Sorting Lengkap** | • **Searching:** Linear Search (nama & ruangan) dan Binary Search Rekursif (ID).<br>• **Sorting:** Optimized Bubble Sort (`swapped` flag), Insertion Sort (Watt aktif), dan Selection Sort (Prioritas). | `modul_analisis.py` (`cari_perangkat_nama`, `cari_perangkat_id_binary`, `urutkan_perangkat_biaya`, `urutkan_perangkat_watt_insertion`, `urutkan_perangkat_prioritas`) |
 | **6** | **Nested Loop (Perulangan Bersarang)** | Outer loop 24 jam & inner loop daftar perangkat untuk matriks simulasi beban ASCII; Outer loop ruangan & inner loop perangkat untuk audit per ruangan | `modul_analisis.py` (`simulasi_beban_24jam`, `audit_per_ruangan`) |
-| **7** | **Manipulasi String & File Handling** | Operasi `.split('|')`, `.join('|')`, `.strip()`, `.title()`, sanitasi string delimiter pipe, parsing rentang jam fleksibel (`8-12`), struk token 20 digit, dan file I/O multi-entitas (`.txt`) | `modul_crud.py`, `modul_analisis.py`, & `modul_prediksi.py` |
+| **7** | **Manipulasi String & File Handling** | Operasi `.split('|')`, `.join('|')`, `.strip()`, `.title()`, sanitasi string delimiter pipe, parsing rentang jam fleksibel (`8-12`), struk token 20 digit, pencatatan audit trail append mode (`log_aktivitas.txt`), dan file I/O multi-entitas (`.txt`) | `modul_crud.py`, `modul_analisis.py`, & `modul_prediksi.py` |
 
 ---
 
@@ -91,11 +92,14 @@ wattwise_project/
 ### 👤 Anggota 2 (CRUD, Data Integrity & Form Validation Specialist)
 - **Tanggung Jawab:**
   - Membangun operasi **CRUD Lengkap** pada inventaris perangkat (Tambah, Lihat, Ubah, Hapus).
+  - Mengimplementasikan fitur **Before vs After Diff (Ringkasan Perubahan)** pada fungsi `ubah_perangkat` dengan konfirmasi `(y/n)` sebelum menyimpan ke berkas fisik.
+  - Membangun sistem **Audit Trail** pencatatan log aktivitas (`log_aktivitas.txt`) dengan mode append (`'a'`) dan penanda waktu (*timestamp*).
+  - Menyediakan **Sub-menu Filter Ruangan** langsung pada menu Read (Lihat Inventaris) menggunakan himpunan ruangan unik.
   - Membangun mekanisme sanitasi string (`sanitasi_string`) untuk mencegah kerusakan file `.txt` akibat karakter delimiter pipe (`|`).
   - Membangun parser input rentang jam fleksibel (`parse_rentang_jam`) yang mendukung format koma maupun rentang strip (`8-12` / `22-2`).
   - Membangun fitur **Linear Search** (pencarian nama & ruangan) dan **Selection Sort** (pengurutan prioritas: Primer $\rightarrow$ Sekunder $\rightarrow$ Tersier).
   - Mengimplementasikan operasi himpunan **Set Difference** (`deteksi_perangkat_boros`) dan **Set Intersection** (`deteksi_bentrok_jam_perangkat`).
-- **File Kerja:** `modul_crud.py` (CRUD & Validasi) dan `modul_analisis.py` (Linear Search, Selection Sort, Set Difference & Intersection).
+- **File Kerja:** `modul_crud.py` (CRUD, Log Aktivitas, Before vs After Diff & Validasi) dan `modul_analisis.py` (Linear Search, Selection Sort, Set Difference & Intersection).
 
 ---
 
@@ -148,6 +152,8 @@ wattwise_project/
   * **Jawaban Mantap:** *"Kami membuat fungsi parser `parse_rentang_jam`. Input di-split berdasarkan koma, lalu untuk tiap segmen yang mengandung karakter tanda hubung `-`, kami split batas awal dan akhirnya, lalu memasukkan bilangan integer dalam rentang tersebut ke dalam tipe data `set` guna menjamin jam aktif bernilai unik (0 s/d 23), termasuk penanganan jam lewat tengah malam seperti '22-2'."*
 * **Dosen:** *"Bagaimana operasi Set Intersection dan Set Difference diterapkan pada data inventaris?"*
   * **Jawaban Mantap:** *"Set Intersection kami gunakan pada `deteksi_bentrok_jam_perangkat` dengan mengiriskan `set(jam_alat_A).intersection(set(jam_alat_B))` untuk mengetahui jam berapa kedua alat menyala bersamaan. Sedangkan Set Difference kami gunakan pada `deteksi_perangkat_boros` dengan mengurangkan himpunan seluruh ID perangkat dengan himpunan ID perangkat hemat energi menggunakan `.difference()`."*
+* **Dosen:** *"Bagaimana sistem menangani konfirmasi sebelum dan sesudah data diubah (Before vs After Diff) serta pencatatan audit trail?"*
+  * **Jawaban Mantap:** *"Pada fungsi `ubah_perangkat`, kami membuat salinan data sebelum diedit (`p_lama`) dan membandingkannya field demi field dengan data hasil input baru (`p_baru`). Sistem merangkum perbedaan (misal `380 W -> 300 W (Berubah)`) dan meminta konfirmasi `(y/n)`. Jika pengguna memilih 'y', data baru disimpan dan aktivitas langsung dicatat ke `log_aktivitas.txt` menggunakan File Handling mode append `'a'` lengkap dengan timestamp ISO."*
 
 ---
 

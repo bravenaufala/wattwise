@@ -25,13 +25,15 @@ from modul_crud import (
     tampilkan_tabel_perangkat,
     ubah_perangkat,
     hapus_perangkat,
-    format_rupiah
+    format_rupiah,
+    lihat_log_aktivitas
 )
 
 from modul_analisis import (
     simulasi_beban_24jam,
     analisis_vampire_power,
     audit_per_ruangan,
+    ambil_himpunan_ruangan,
     cari_perangkat_nama,
     cari_perangkat_ruangan,
     cari_perangkat_daya_tinggi,
@@ -67,15 +69,55 @@ def menu_kelola_perangkat(daftar_perangkat, profil_rumah):
         print("2. Lihat Seluruh Inventaris    (Read)")
         print("3. Ubah Data Perangkat         (Update)")
         print("4. Hapus Perangkat             (Delete)")
+        print("5. Riwayat Log Aktivitas       (Audit Trail)")
         print("0. Kembali ke Menu Utama")
         print("="*50)
-        pilihan = input("Pilih Menu [0-4]: ").strip()
+        pilihan = input("Pilih Menu [0-5]: ").strip()
 
         if pilihan == "1":
             tambah_perangkat(daftar_perangkat)
             jeda_layar()
         elif pilihan == "2":
-            tampilkan_tabel_perangkat(daftar_perangkat, profil_rumah["tarif"])
+            if not daftar_perangkat:
+                print(f"\n{Warna.KUNING}[i] Belum ada data perangkat. Silakan tambahkan perangkat terlebih dahulu.{Warna.RESET}")
+                jeda_layar()
+                continue
+
+            print("\n" + "-"*45)
+            print(f"      {Warna.CYAN}{Warna.TEBAL}OPSI TAMPILAN INVENTARIS{Warna.RESET}")
+            print("-" * 45)
+            print("1. Tampilkan Semua Alat")
+            print("2. Filter Berdasarkan Ruangan Tertentu")
+            print("-" * 45)
+            sub_pilih = input("Pilih Opsi [1/2, default 1]: ").strip()
+
+            if sub_pilih == "2":
+                ruangan_unik = sorted(list(ambil_himpunan_ruangan(daftar_perangkat)))
+                if not ruangan_unik:
+                    print(f"{Warna.KUNING}[!] Belum ada data ruangan.{Warna.RESET}")
+                else:
+                    print(f"\n{Warna.CYAN}Daftar Ruangan yang Tersedia:{Warna.RESET}")
+                    for idx_r, r in enumerate(ruangan_unik, 1):
+                        print(f"  {idx_r}. {r}")
+                    input_ruang = input(f"Pilih nomor ruangan [1-{len(ruangan_unik)}] atau ketik nama ruangan: ").strip()
+
+                    ruang_target = ""
+                    if input_ruang.isdigit() and 1 <= int(input_ruang) <= len(ruangan_unik):
+                        ruang_target = ruangan_unik[int(input_ruang) - 1]
+                    elif input_ruang:
+                        ruang_target = input_ruang
+
+                    if ruang_target:
+                        hasil_filter = cari_perangkat_ruangan(daftar_perangkat, ruang_target)
+                        if hasil_filter:
+                            print(f"\n{Warna.HIJAU}[*] Menampilkan perangkat di ruangan: {Warna.TEBAL}{ruang_target}{Warna.RESET}")
+                            tampilkan_tabel_perangkat(hasil_filter, profil_rumah["tarif"], judul_filter=ruang_target)
+                        else:
+                            print(f"\n{Warna.MERAH}[!] Tidak ada perangkat ditemukan di ruangan '{ruang_target}'!{Warna.RESET}")
+                    else:
+                        print(f"{Warna.KUNING}[*] Pemilihan ruangan dibatalkan.{Warna.RESET}")
+            else:
+                tampilkan_tabel_perangkat(daftar_perangkat, profil_rumah["tarif"])
             jeda_layar()
         elif pilihan == "3":
             tampilkan_tabel_perangkat(daftar_perangkat, profil_rumah["tarif"])
@@ -84,6 +126,9 @@ def menu_kelola_perangkat(daftar_perangkat, profil_rumah):
         elif pilihan == "4":
             tampilkan_tabel_perangkat(daftar_perangkat, profil_rumah["tarif"])
             hapus_perangkat(daftar_perangkat)
+            jeda_layar()
+        elif pilihan == "5":
+            lihat_log_aktivitas()
             jeda_layar()
         elif pilihan == "0":
             break
