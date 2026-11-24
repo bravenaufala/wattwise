@@ -45,14 +45,15 @@ from modul_analisis import (
     deteksi_bentrok_jam_perangkat,
     gabungkan_jam_aktif_ruangan,
     deteksi_perangkat_boros,
-    export_laporan_audit
+    export_laporan_audit,
+    smart_budget_optimizer
 )
 
 from modul_prediksi import (
     prediksi_habis_token,
-    smart_budget_optimizer,
     beli_token_listrik,
-    tampilkan_struk_token
+    tampilkan_struk_token,
+    tampilkan_grafik_sisa_token
 )
 
 def jeda_layar():
@@ -364,10 +365,11 @@ def main():
         print("5. Prediksi Habisnya Token & Budget Diet     (Fitur Cerdas)")
         print("6. Pengaturan Profil Daya Rumah & Token      (Tuple Tarif PLN)")
         print("7. Export Laporan Resmi Audit Listrik        (File .txt)")
+        print("8. Smart Budget Optimizer                    (Greedy + Exlucion List)")
         print("0. Keluar Aplikasi")
         print("="*65)
 
-        pilihan = input("Masukkan Pilihan Anda [0-7]: ").strip()
+        pilihan = input("Masukkan Pilihan Anda [0-8]: ").strip()
 
         if pilihan == "1":
             menu_kelola_perangkat(daftar_perangkat, profil_rumah)
@@ -382,13 +384,25 @@ def main():
             jeda_layar()
         elif pilihan == "5":
             prediksi_habis_token(daftar_perangkat, profil_rumah)
-            smart_budget_optimizer(daftar_perangkat, profil_rumah["tarif"])
+            tampilkan_grafik_sisa_token()
             jeda_layar()
         elif pilihan == "6":
             menu_profil_daya(profil_rumah)
         elif pilihan == "7":
             export_laporan_audit(daftar_perangkat, profil_rumah)
             jeda_layar()
+        elif pilihan == "8":
+            try:
+                anggaran = float(input("Masukan anggaran maksimal per bulan (Rp): "))
+                if anggaran <= 0:
+                    print("[!] Anggaran harus lebih dari 0!")
+                else:
+                    smart_budget_optimizer(
+                        daftar_perangkat, anggaran, profil_rumah["tarif"]
+                    )
+            except ValueError:
+                print("[!] Anggaran harus berupa angka!")
+            jeda_layar
         elif pilihan == "0":
             print("\nTerima kasih telah menggunakan WattWise Home!")
             print("Bijak menggunakan energi, selamatkan kantong & bumi.\n")
@@ -396,5 +410,5 @@ def main():
         else:
             print("[!] Pilihan menu tidak valid. Silakan coba lagi.")
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
     main()
