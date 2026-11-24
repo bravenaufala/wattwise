@@ -358,7 +358,9 @@ def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
         bar_len = int(persen * 20)
         bar_str = "█" * min(bar_len, 20) + "░" * max(0, 20 - bar_len)
 
-        if total_watt_jam > (batas_watt_aman * 0.8):
+        if total_watt_jam > batas_watt_aman:
+            status = f" {Warna.MERAH}{Warna.TEBAL}[!] OVERLOAD (RISIKO JEGLEK){Warna.RESET}"
+        elif total_watt_jam > (batas_watt_aman * 0.8):
             status = f" {Warna.KUNING}[*] WASPADA (>80%){Warna.RESET}"
         else:
             status = f" {Warna.HIJAU}[v] AMAN{Warna.RESET}"
@@ -392,7 +394,7 @@ def smart_budget_optimizer(daftar_perangkat, anggaran_maksimal, tarif_per_kwh):
     Perangkat yang ID-nya dikecualikan tidak akan dikurangi jam pakainya.
     """
     print("\n" + "="*75)
-    print("     SMART BUDGET OPTIMIZER - GREEDY ALGORTIHM")
+    print("     SMART BUDGET OPTIMIZER - GREEDY ALGORITHM")
     print("="*75)
 
     # Salin data agar data perangkat asli tidak berubah
@@ -400,11 +402,11 @@ def smart_budget_optimizer(daftar_perangkat, anggaran_maksimal, tarif_per_kwh):
 
     # Input ID perangkat yang tidak boleh dikurangi jam pakainya
     input_id = input(
-        "Masukan ID perangkat yang dikecualikan (pisahkan dengan koma): "
+        "Masukkan ID perangkat yang dikecualikan (pisahkan dengan koma): "
     )
 
     daftar_id_dikecualikan = [
-        item.strip() for item in input_id.split(",") if item.strip()
+        item.strip().upper() for item in input_id.split(",") if item.strip()
     ]
 
     print(f"\nID yang dikecualikan: {daftar_id_dikecualikan}")
@@ -426,24 +428,23 @@ def smart_budget_optimizer(daftar_perangkat, anggaran_maksimal, tarif_per_kwh):
     biaya_sekarang = biaya_awal
 
     print(f"\nBiaya awal        : {format_rupiah(biaya_awal)}")
-    print(f"Target anggaran     : {format_rupiah(anggaran_maksimal)}")
+    print(f"Target anggaran   : {format_rupiah(anggaran_maksimal)}")
 
-    #GREEDY: Kurangi jam dari perangkat dengan penghematan terbesar
+    # GREEDY: Kurangi jam dari perangkat dengan penghematan terbesar
     while biaya_sekarang > anggaran_maksimal:
-        
         kandidat = []
 
         for p in perangkat_hasil:
             # Lewati perangkat yang dikecualikan
-            if str(p["id"]) in daftar_id_dikecualikan:
+            if str(p["id"]).upper() in daftar_id_dikecualikan:
                 continue
             # Jam pakai tidak boleh kurang dari nol
-            if p["Jam_pakai"] <= 0:
+            if p["jam_pakai"] <= 0:
                 continue
-            # Penghematan biaya jika jam aktif dikurangi 1 jam
+            # Penghematan biaya jika jam aktif dikurangi 1 jam per hari (30 hari/bulan)
             hemat = (
                 (p["watt_aktif"] - p["watt_standby"])
-                * 300 / 1000
+                * 30 / 1000
                 * tarif_per_kwh
             )
 
@@ -463,7 +464,7 @@ def smart_budget_optimizer(daftar_perangkat, anggaran_maksimal, tarif_per_kwh):
         biaya_sekarang = hitung_total_biaya()
 
         print(
-            f"-> ID {alat['id']} ({alat['nama']})"
+            f"-> ID {alat['id']} ({alat['nama']}) "
             f"jam pakai dikurangi menjadi {alat['jam_pakai']} jam"
         )
     #Laporan hasil estimasi
@@ -686,7 +687,7 @@ def export_laporan_audit(daftar_perangkat, profil_rumah, nama_file="laporan_audi
             )
         
         lines.append(
-            "REKOMENDASI: Kurangi atau geser penggunaan"
+            "REKOMENDASI: Kurangi atau geser penggunaan "
             "perangkat berdaya besar ke jam yang lebih aman.\n"
         )
     else:

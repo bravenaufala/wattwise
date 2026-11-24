@@ -365,7 +365,7 @@ def main():
         print("5. Prediksi Habisnya Token & Budget Diet     (Fitur Cerdas)")
         print("6. Pengaturan Profil Daya Rumah & Token      (Tuple Tarif PLN)")
         print("7. Export Laporan Resmi Audit Listrik        (File .txt)")
-        print("8. Smart Budget Optimizer                    (Greedy + Exlucion List)")
+        print("8. Smart Budget Optimizer                    (Greedy + Exclusion List)")
         print("0. Keluar Aplikasi")
         print("="*65)
 
@@ -393,7 +393,7 @@ def main():
             jeda_layar()
         elif pilihan == "8":
             try:
-                anggaran = float(input("Masukan anggaran maksimal per bulan (Rp): "))
+                anggaran = float(input("Masukkan anggaran maksimal per bulan (Rp): ").strip().replace(".", ""))
                 if anggaran <= 0:
                     print("[!] Anggaran harus lebih dari 0!")
                 else:
@@ -402,7 +402,7 @@ def main():
                     )
             except ValueError:
                 print("[!] Anggaran harus berupa angka!")
-            jeda_layar
+            jeda_layar()
         elif pilihan == "0":
             print("\nTerima kasih telah menggunakan WattWise Home!")
             print("Bijak menggunakan energi, selamatkan kantong & bumi.\n")
