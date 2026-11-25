@@ -1,4 +1,4 @@
-from modul_crud import format_rupiah, Warna
+from modul_crud import format_rupiah, Warna, cetak_header, cetak_garis
 
 
 def ambil_himpunan_ruangan(daftar_perangkat):
@@ -159,10 +159,8 @@ def rekomendasi_anti_jeglek(daftar_perangkat, batas_watt_aman, jam_overload, rin
     if not jam_overload:
         return
 
-    print("\n" + "=" * 85)
-    print(f"      {Warna.CYAN}{Warna.TEBAL}REKOMENDASI CERDAS ANTI-JEGLEK (SMART LOAD SHIFTING){Warna.RESET}")
-    print("=" * 85)
-    print("Sistem menganalisis pergeseran jam pakai untuk mencegah MCB trip:")
+    cetak_header("REKOMENDASI ANTI-JEGLEK (SMART LOAD SHIFTING)", lebar=86)
+    print("  Analisis pergeseran jam pakai untuk mencegah MCB trip:")
 
     for jam, watt, alat_id_list in jam_overload:
         kelebihan = watt - batas_watt_aman
@@ -204,16 +202,17 @@ def rekomendasi_anti_jeglek(daftar_perangkat, batas_watt_aman, jam_overload, rin
         else:
             print(f"   [*] Saran: Hindari menyalakan '{alat_terpilih['nama']}' bersamaan dengan alat pemanas lainnya.")
 
-    print("=" * 85)
+    cetak_garis(86)
 
 
 def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
-    print("\n" + "=" * 85)
-    print(f"        {Warna.CYAN}{Warna.TEBAL}SIMULASI MATRIKS BEBAN LISTRIK 24 JAM (DETEKTOR ANTI-JEGLEK){Warna.RESET}")
-    print(f"        Batas Daya Aman: {batas_watt_aman} Watt | Kapasitas Terpasang: {va_maks} VA")
-    print("=" * 85)
-    print(f"{'Jam':<7} | {'Beban (Watt)':<12} | {'Visualisasi Beban (ASCII Bar)':<35} | {'Status'}")
-    print("-" * 85)
+    cetak_header(
+        "SIMULASI BEBAN LISTRIK 24 JAM (ANTI-JEGLEK)",
+        f"Batas Aman: {batas_watt_aman} W  |  Kapasitas: {va_maks} VA",
+        lebar=86
+    )
+    print(f"  {Warna.TEBAL}{'Jam':<7} │ {'Beban':>10} │ {'Visualisasi Beban':<29} │ {'Status'}{Warna.RESET}")
+    cetak_garis(86)
 
     jam_overload = []
     rincian_per_jam = {}
@@ -238,46 +237,51 @@ def simulasi_beban_24jam(daftar_perangkat, batas_watt_aman=1100, va_maks=1300):
 
         persen = min(total_watt_jam / batas_watt_aman, 1.5)
         bar_len = int(persen * 20)
-        bar_str = "█" * min(bar_len, 20) + "░" * max(0, 20 - bar_len)
+        bar_filled = "█" * min(bar_len, 20)
+        bar_empty = "░" * max(0, 20 - bar_len)
 
         if total_watt_jam > batas_watt_aman:
-            status = f" {Warna.MERAH}{Warna.TEBAL}[!] OVERLOAD (RISIKO JEGLEK){Warna.RESET}"
+            bar_warna = Warna.MERAH
+            status = f"{Warna.MERAH}{Warna.TEBAL}[!] OVERLOAD (RISIKO JEGLEK){Warna.RESET}"
         elif total_watt_jam > (batas_watt_aman * 0.8):
-            status = f" {Warna.KUNING}[*] WASPADA (>80%){Warna.RESET}"
+            bar_warna = Warna.KUNING
+            status = f"{Warna.KUNING}[*] WASPADA (>80%){Warna.RESET}"
         else:
-            status = f" {Warna.HIJAU}[v] AMAN{Warna.RESET}"
+            bar_warna = Warna.HIJAU
+            status = f"{Warna.HIJAU}[v] AMAN{Warna.RESET}"
 
-        print(f"{jam:02d}:00   | {total_watt_jam:>5} Watt    | [{bar_str:<20}] {int(persen*100):>3}% |{status}")
+        print(
+            f"  {jam:02d}:00   │ {total_watt_jam:>5} Watt │ "
+            f"{bar_warna}{bar_filled}{Warna.REDUP}{bar_empty}{Warna.RESET} {int(persen*100):>3}%   │ {status}"
+        )
 
-    print("=" * 85)
+    cetak_garis(86)
 
     if jam_overload:
-        print("\n" + "!" * 85)
-        print(f" {Warna.MERAH}{Warna.TEBAL}PERINGATAN POTENSI MCB TRIP (LISTRIK JEGLEK) DITEMUKAN!{Warna.RESET}")
-        print("!" * 85)
+        print(f"\n  {Warna.MERAH}{Warna.TEBAL}[!] PERINGATAN POTENSI MCB TRIP (LISTRIK JEGLEK){Warna.RESET}")
+        cetak_garis(86)
         for jam, watt, alat_id_list in jam_overload:
-            print(f"-> Jam {jam:02d}:00 : Total Beban {Warna.MERAH}{watt} W{Warna.RESET} melebihi kapasitas aman {batas_watt_aman} W.")
+            print(f"  -> Jam {jam:02d}:00 : Total Beban {Warna.MERAH}{Warna.TEBAL}{watt} W{Warna.RESET} melebihi batas aman {batas_watt_aman} W.")
             nama_alat_list = [p["nama"] for p in daftar_perangkat if p["id"] in alat_id_list]
-            print(f"   Alat yang menyala bersamaan: {', '.join(nama_alat_list)}")
+            print(f"     {Warna.REDUP}Alat menyala:{Warna.RESET} {', '.join(nama_alat_list)}")
 
         rekomendasi_anti_jeglek(daftar_perangkat, batas_watt_aman, jam_overload, rincian_per_jam)
     else:
-        print(f"\n{Warna.HIJAU}[v] KONDISI AMAN: Tidak ditemukan jam dengan potensi listrik jeglek.{Warna.RESET}")
+        print(f"\n  {Warna.HIJAU}[v] KONDISI AMAN: Tidak ditemukan jam dengan potensi listrik jeglek.{Warna.RESET}")
 
     return rincian_per_jam
 
 
 def smart_budget_optimizer(daftar_perangkat, anggaran_maksimal, tarif_per_kwh):
     """Optimasi biaya bulanan dengan metode greedy dan daftar ID pengecualian."""
-    print("\n" + "=" * 75)
-    print(f"            {Warna.CYAN}{Warna.TEBAL}SMART BUDGET OPTIMIZER - GREEDY ALGORITHM{Warna.RESET}")
-    print("=" * 75)
+    cetak_header("SMART BUDGET OPTIMIZER", "Algoritma Greedy + Exclusion List", lebar=78)
 
     perangkat_hasil = [p.copy() for p in daftar_perangkat]
-    input_id = input("Masukkan ID perangkat yang dikecualikan (pisahkan dengan koma): ")
-    daftar_id_dikecualikan = [item.strip().upper() for item in input_id.split(",") if item.strip()]
+    jam_awal_map = {p["id"]: p["jam_pakai"] for p in perangkat_hasil}
 
-    print(f"\nID yang dikecualikan: {daftar_id_dikecualikan}")
+    input_id = input("  ID perangkat yang dikecualikan (pisahkan koma, ENTER jika tidak ada): ")
+    daftar_id_dikecualikan = [item.strip().upper() for item in input_id.split(",") if item.strip()]
+    eksklusi_str = ", ".join(daftar_id_dikecualikan) if daftar_id_dikecualikan else "Tidak ada"
 
     def hitung_total_biaya():
         total = 0.0
@@ -289,8 +293,12 @@ def smart_budget_optimizer(daftar_perangkat, anggaran_maksimal, tarif_per_kwh):
     biaya_awal = hitung_total_biaya()
     biaya_sekarang = biaya_awal
 
-    print(f"\nBiaya awal        : {format_rupiah(biaya_awal)}")
-    print(f"Target anggaran   : {format_rupiah(anggaran_maksimal)}")
+    print()
+    cetak_garis(78)
+    print(f"  ID Dikecualikan : {Warna.CYAN}{eksklusi_str}{Warna.RESET}")
+    print(f"  Biaya Awal      : {format_rupiah(biaya_awal)} / bulan")
+    print(f"  Target Anggaran : {Warna.KUNING}{format_rupiah(anggaran_maksimal)}{Warna.RESET} / bulan")
+    cetak_garis(78)
 
     while biaya_sekarang > anggaran_maksimal:
         kandidat = []
@@ -309,20 +317,36 @@ def smart_budget_optimizer(daftar_perangkat, anggaran_maksimal, tarif_per_kwh):
         alat["jam_pakai"] -= 1
         biaya_sekarang = hitung_total_biaya()
 
-        print(f"-> ID {alat['id']} ({alat['nama']}) jam pakai dikurangi menjadi {alat['jam_pakai']} jam")
+    perubahan = [p for p in perangkat_hasil if p["jam_pakai"] < jam_awal_map[p["id"]]]
 
-    print("\n" + "=" * 75)
-    print(f"Biaya sebelum optimasi : {format_rupiah(biaya_awal)}")
-    print(f"Biaya setelah optimasi : {format_rupiah(biaya_sekarang)}")
-    print(f"Total penghematan      : {format_rupiah(biaya_awal - biaya_sekarang)}")
+    if perubahan:
+        print(f"\n  {Warna.TEBAL}{'ID':<6} │ {'Nama Alat':<22} │ {'Jam Pakai':<16} │ {'Hemat / Bulan':>15}{Warna.RESET}")
+        cetak_garis(78)
+        for p in perubahan:
+            jam_lama = jam_awal_map[p["id"]]
+            jam_baru = p["jam_pakai"]
+            hemat_rp = (jam_lama - jam_baru) * (p["watt_aktif"] - p["watt_standby"]) * 30 / 1000.0 * tarif_per_kwh
+            print(
+                f"  {Warna.CYAN}{p['id']:<6}{Warna.RESET} │ {p['nama']:<22} │ "
+                f"{jam_lama:>2} jam -> {Warna.KUNING}{jam_baru:>2} jam{Warna.RESET} │ {Warna.HIJAU}{format_rupiah(hemat_rp):>15}{Warna.RESET}"
+            )
+    else:
+        print(f"\n  {Warna.REDUP}Tidak ada pengurangan jam pakai yang diperlukan.{Warna.RESET}")
+
+    print()
+    cetak_garis(78)
+    print(f"  Biaya Sebelum Optimasi : {format_rupiah(biaya_awal)}")
+    print(f"  Biaya Setelah Optimasi : {Warna.TEBAL}{format_rupiah(biaya_sekarang)}{Warna.RESET}")
+    print(f"  Total Penghematan      : {Warna.HIJAU}{Warna.TEBAL}{format_rupiah(biaya_awal - biaya_sekarang)}{Warna.RESET}")
+    cetak_garis(78)
 
     if biaya_sekarang <= anggaran_maksimal:
-        print(f"{Warna.HIJAU}[BERHASIL] Anggaran berhasil dicapai!{Warna.RESET}")
+        print(f"  {Warna.HIJAU}{Warna.TEBAL}[OK] Target anggaran berhasil dicapai!{Warna.RESET}")
     else:
-        print(f"{Warna.KUNING}[PERINGATAN] Anggaran belum tercapai.{Warna.RESET}")
-        print("Perangkat yang tersisa tidak dapat dikurangi lagi atau dikecualikan.")
+        print(f"  {Warna.KUNING}{Warna.TEBAL}[!] Anggaran belum tercapai.{Warna.RESET}")
+        print(f"  {Warna.REDUP}Perangkat yang tersisa tidak dapat dikurangi lagi atau dikecualikan.{Warna.RESET}")
+    cetak_garis(78)
 
-    print("=" * 75)
     return perangkat_hasil
 
 
@@ -332,14 +356,12 @@ def audit_per_ruangan(daftar_perangkat, tarif_per_kwh=1444.70):
         print("\n[i] Tidak ada data perangkat untuk diaudit.")
         return
 
-    print("\n" + "=" * 80)
-    print(f"                    {Warna.CYAN}{Warna.TEBAL}AUDIT KONSUMSI LISTRIK PER RUANGAN{Warna.RESET}")
-    print("=" * 80)
+    cetak_header("AUDIT KONSUMSI LISTRIK PER RUANGAN", lebar=78)
 
     for ruangan in sorted(set_ruangan):
-        print(f"\n Ruangan: [{ruangan.upper()}]")
-        print(f" {'ID':<6} | {'Nama Alat':<25} | {'Aktif':<8} | {'Jam':<5} | {'Biaya/Bulan'}")
-        print(" " + "-" * 65)
+        print(f"\n  {Warna.CYAN}{Warna.TEBAL}[ {ruangan.upper()} ]{Warna.RESET}")
+        print(f"  {Warna.TEBAL}{'ID':<6} │ {'Nama Alat':<25} │ {'Aktif':>7} │ {'Jam':>4} │ {'Biaya / Bulan':>15}{Warna.RESET}")
+        cetak_garis(78)
 
         subtotal_watt = 0
         subtotal_biaya = 0.0
@@ -350,20 +372,22 @@ def audit_per_ruangan(daftar_perangkat, tarif_per_kwh=1444.70):
                 biaya = kwh_bulan * tarif_per_kwh
                 subtotal_watt += p["watt_aktif"]
                 subtotal_biaya += biaya
-                print(f" {p['id']:<6} | {p['nama']:<25} | {p['watt_aktif']:<5} W | {p['jam_pakai']:<2} j  | {format_rupiah(biaya)}")
+                print(
+                    f"  {Warna.CYAN}{p['id']:<6}{Warna.RESET} │ {p['nama']:<25} │ "
+                    f"{p['watt_aktif']:>5} W │ {p['jam_pakai']:>2} j │ {format_rupiah(biaya):>15}"
+                )
 
-        print(" " + "-" * 65)
-        print(f" Subtotal Ruang {ruangan}: Total Daya Aktif = {subtotal_watt} W | Biaya = {format_rupiah(subtotal_biaya)}/Bulan")
-
-    print("=" * 80)
+        cetak_garis(78)
+        print(
+            f"  Subtotal {ruangan:<15} : Daya Aktif {Warna.TEBAL}{subtotal_watt} W{Warna.RESET}  │  "
+            f"Biaya {Warna.HIJAU}{Warna.TEBAL}{format_rupiah(subtotal_biaya)}{Warna.RESET}/bln"
+        )
 
 
 def analisis_vampire_power(daftar_perangkat, tarif_per_kwh=1444.70):
-    print("\n" + "=" * 85)
-    print(f"        {Warna.CYAN}{Warna.TEBAL}DETEKTOR VAMPIRE POWER (KEBOCORAN DAYA STANDBY LISTRIK){Warna.RESET}")
-    print("=" * 85)
-    print(f"{'ID':<6} | {'Nama Alat':<22} | {'Stdby (W)':<10} | {'Jam Idle':<9} | {'kWh/Bulan':<10} | {'Rupiah Terbuang/Thn'}")
-    print("-" * 85)
+    cetak_header("DETEKTOR VAMPIRE POWER", "Kebocoran Daya Standby Listrik", lebar=86)
+    print(f"  {Warna.TEBAL}{'ID':<6} │ {'Nama Alat':<22} │ {'Stdby':>7} │ {'Idle':>6} │ {'kWh/Bln':>8} │ {'Rugi / Tahun':>16}{Warna.RESET}")
+    cetak_garis(86)
 
     total_kwh_vampire_bulan = 0.0
     total_rugi_tahunan = 0.0
@@ -378,15 +402,19 @@ def analisis_vampire_power(daftar_perangkat, tarif_per_kwh=1444.70):
             total_kwh_vampire_bulan += kwh_bulan
             total_rugi_tahunan += rugi_tahun
 
-            print(f"{p['id']:<6} | {p['nama']:<22} | {standby_w:>6} W   | {jam_idle:>4} jam  | {kwh_bulan:>8.2f}   | {format_rupiah(rugi_tahun)}")
+            print(
+                f"  {Warna.CYAN}{p['id']:<6}{Warna.RESET} │ {p['nama']:<22} │ {standby_w:>5} W │ "
+                f"{jam_idle:>4} j │ {kwh_bulan:>8.2f} │ {Warna.MERAH}{format_rupiah(rugi_tahun):>16}{Warna.RESET}"
+            )
 
-    print("-" * 85)
-    print(f" TOTAL KEBOCORAN DAYA STANDBY : {total_kwh_vampire_bulan:.2f} kWh/Bulan")
-    print(f" TOTAL UANG TERBUANG SIA-SIA   : {format_rupiah(total_kwh_vampire_bulan * tarif_per_kwh)}/Bulan")
-    print(f"                                 atau {format_rupiah(total_rugi_tahunan)}/Tahun!")
-    print("\n[TIPS HEMAT] Cabut colokan TV, microwave, charger, dan dispenser saat tidak dipakai,")
-    print("             atau gunakan stopkontak switch on/off agar tidak ada arus standby.")
-    print("=" * 85)
+    cetak_garis(86)
+    print(f"  Total Kebocoran Standby : {Warna.TEBAL}{total_kwh_vampire_bulan:.2f} kWh / bulan{Warna.RESET}")
+    print(
+        f"  Estimasi Kerugian       : {Warna.KUNING}{format_rupiah(total_kwh_vampire_bulan * tarif_per_kwh)}{Warna.RESET}/bln  "
+        f"({Warna.MERAH}{Warna.TEBAL}{format_rupiah(total_rugi_tahunan)}/tahun{Warna.RESET})"
+    )
+    print(f"\n  {Warna.REDUP}[Tips] Cabut colokan alat standby atau gunakan stopkontak bersaklar.{Warna.RESET}")
+    cetak_garis(86)
 
 
 def hitung_emisi_karbon(total_kwh_bulan):

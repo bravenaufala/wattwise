@@ -1,7 +1,7 @@
 import os
 import random
 from datetime import datetime, timedelta
-from modul_crud import format_rupiah, Warna, simpan_profil, simpan_semua_perangkat
+from modul_crud import format_rupiah, Warna, simpan_profil, simpan_semua_perangkat, cetak_header, cetak_garis
 
 FILE_RIWAYAT_TOKEN = "riwayat_token.txt"
 
@@ -49,20 +49,17 @@ def tampilkan_grafik_sisa_token():
 
     nilai_maksimal = max(item["sisa"] for item in data_grafik)
 
-    print("\n" + "=" * 65)
-    print(f"       {Warna.CYAN}{Warna.TEBAL}GRAFIK SISA TOKEN LISTRIK - 3 TOP UP TERAKHIR{Warna.RESET}")
-    print("=" * 65)
+    cetak_header("GRAFIK SISA TOKEN LISTRIK", "3 Transaksi Top-Up Terakhir", lebar=74)
 
     for item in data_grafik:
         panjang_bar = int((item["sisa"] / nilai_maksimal) * 30) if nilai_maksimal > 0 else 0
-        grafik = "#" * panjang_bar
+        bar_filled = "█" * panjang_bar
+        bar_empty = "░" * (30 - panjang_bar)
 
-        print(f"\nTanggal : {item['tanggal']}")
-        print(f"Top up  : {format_rupiah(item['nominal'])}")
-        print(f"Sisa    : {item['sisa']:.2f} kWh")
-        print(f"[{grafik}]")
+        print(f"  {Warna.REDUP}{item['tanggal']:<16}{Warna.RESET} │ {format_rupiah(item['nominal']):>14} │ {Warna.HIJAU}{item['sisa']:>6.2f} kWh{Warna.RESET}")
+        print(f"  {Warna.CYAN}{bar_filled}{Warna.REDUP}{bar_empty}{Warna.RESET}\n")
 
-    print("\n" + "=" * 65)
+    cetak_garis(74)
 
 
 def beli_token_listrik(profil_rumah, nominal_rp):
@@ -104,32 +101,26 @@ def beli_token_listrik(profil_rumah, nominal_rp):
 
 
 def tampilkan_struk_token(struk, profil_rumah):
-    print("\n" + "=" * 55)
-    print(f"       {Warna.CYAN}{Warna.TEBAL}STRUK PEMBELIAN LISTRIK PRABAYAR (PLN){Warna.RESET}")
-    print("=" * 55)
-    print(f" Waktu Transaksi    : {struk['tanggal']}")
-    print(" ID Pelanggan / ID  : 5382-9102-4412 (Simulasi)")
-    print(f" Golongan / Daya    : {profil_rumah['golongan']} / {profil_rumah['va']} VA")
-    print(f" Tarif Dasar Listrik: {format_rupiah(profil_rumah['tarif'])} /kWh")
-    print("-" * 55)
-    print(f" Pembelian Token    : {format_rupiah(struk['nominal'])}")
-    print(f" Potongan PPJ (3%)  : {format_rupiah(struk['ppj'])}")
-    print(f" Nilai Listrik Net  : {format_rupiah(struk['dana_bersih'])}")
-    print(f" {Warna.HIJAU}{Warna.TEBAL}Energi Didapat     : +{struk['kwh_didapat']:.2f} kWh{Warna.RESET}")
-    print(f" Sisa Token Baru    : {struk['sisa_baru']:.2f} kWh")
-    print("=" * 55)
-    print(f" {Warna.KUNING}{Warna.TEBAL}KODE TOKEN 20 DIGIT ANDA:{Warna.RESET}")
-    print(f" >> {Warna.HIJAU}{Warna.TEBAL}{struk['kode_token']}{Warna.RESET} <<")
-    print("=" * 55)
-    print(" [i] Masukkan kode 20 digit di atas ke meteran listrik rumah.")
-    print(" [i] Data sisa token dan histori berhasil disimpan otomatis.")
-    print("=" * 55)
+    cetak_header("STRUK PEMBELIAN LISTRIK PRABAYAR (PLN)", f"Waktu: {struk['tanggal']}", lebar=60)
+    print("  ID Pelanggan       : 5382-9102-4412 (Simulasi)")
+    print(f"  Golongan / Daya    : {profil_rumah['golongan']} ({profil_rumah['va']} VA)")
+    print(f"  Tarif Dasar        : {format_rupiah(profil_rumah['tarif'])} /kWh")
+    cetak_garis(60)
+    print(f"  Pembelian Token    : {format_rupiah(struk['nominal'])}")
+    print(f"  Potongan PPJ (3%)  : {format_rupiah(struk['ppj'])}")
+    print(f"  Nilai Listrik Net  : {format_rupiah(struk['dana_bersih'])}")
+    print(f"  Energi Didapat     : {Warna.HIJAU}{Warna.TEBAL}+{struk['kwh_didapat']:.2f} kWh{Warna.RESET}")
+    print(f"  Sisa Token Baru    : {Warna.TEBAL}{struk['sisa_baru']:.2f} kWh{Warna.RESET}")
+    cetak_garis(60)
+    print(f"  {Warna.KUNING}{Warna.TEBAL}KODE TOKEN 20 DIGIT:{Warna.RESET}")
+    print(f"  {Warna.HIJAU}{Warna.TEBAL}>> {struk['kode_token']} <<{Warna.RESET}")
+    cetak_garis(60)
+    print(f"  {Warna.REDUP}[i] Data sisa token dan histori berhasil disimpan otomatis.{Warna.RESET}")
+    cetak_garis(60)
 
 
 def prediksi_habis_token(daftar_perangkat, profil_rumah):
-    print("\n" + "=" * 75)
-    print(f"           {Warna.CYAN}{Warna.TEBAL}PREDIKSI HABISNYA TOKEN LISTRIK (PULSA PLN){Warna.RESET}")
-    print("=" * 75)
+    cetak_header("PREDIKSI HABISNYA TOKEN LISTRIK", "Estimasi Pemakaian Harian PLN Prabayar", lebar=74)
 
     sisa_kwh = profil_rumah.get("sisa_token_kwh", 0.0)
     tarif = profil_rumah.get("tarif", 1444.70)
@@ -140,14 +131,14 @@ def prediksi_habis_token(daftar_perangkat, profil_rumah):
         standby = (p["watt_standby"] * (24 - p["jam_pakai"])) / 1000.0
         total_kwh_harian += aktif + standby
 
-    print(f" Sisa Token Saat Ini di Meteran  : {sisa_kwh:.2f} kWh")
-    print(f" Rata-rata Pemakaian Harian      : {total_kwh_harian:.2f} kWh / Hari")
-    print(f" Estimasi Biaya Pemakaian Harian : {format_rupiah(total_kwh_harian * tarif)} / Hari")
-    print("-" * 75)
+    print(f"  Sisa Token di Meteran    : {Warna.HIJAU}{Warna.TEBAL}{sisa_kwh:.2f} kWh{Warna.RESET}")
+    print(f"  Rata-rata Pemakaian      : {total_kwh_harian:.2f} kWh / hari")
+    print(f"  Estimasi Biaya Harian    : {format_rupiah(total_kwh_harian * tarif)} / hari")
+    cetak_garis(74)
 
     if total_kwh_harian <= 0:
-        print("[i] Tidak ada konsumsi listrik harian yang terdeteksi.")
-        print("=" * 75)
+        print("  [i] Tidak ada konsumsi listrik harian yang terdeteksi.")
+        cetak_garis(74)
         return
 
     sisa_hari = sisa_kwh / total_kwh_harian
@@ -155,26 +146,27 @@ def prediksi_habis_token(daftar_perangkat, profil_rumah):
     jam_sisa = int((sisa_hari - hari_bulat) * 24)
     tanggal_habis = datetime.now() + timedelta(days=sisa_hari)
 
-    print("\n>>> HASIL PREDIKSI SISTEM:")
-    print(" Token Anda diperkirakan akan HABIS dalam:")
-    print(f" ==> {hari_bulat} Hari {jam_sisa} Jam lagi")
-    print(f" ==> Perkiraan Tanggal Habis : {tanggal_habis.strftime('%A, %d %B %Y jam %H:%M')}")
+    print(f"  Perkiraan Token Habis    : {Warna.TEBAL}{hari_bulat} Hari {jam_sisa} Jam lagi{Warna.RESET}")
+    print(f"  Estimasi Tanggal Habis   : {Warna.CYAN}{tanggal_habis.strftime('%A, %d %B %Y jam %H:%M')}{Warna.RESET}")
 
     if sisa_hari <= 2:
-        print("\n[!] PERINGATAN DARURAT: Token Anda tinggal sedikit! Segera beli token baru")
-        print("    agar listrik tidak padam tiba-tiba di malam hari.")
+        print(f"\n  {Warna.MERAH}{Warna.TEBAL}[!] DARURAT: Sisa token sangat sedikit, segera isi ulang.{Warna.RESET}")
     elif sisa_hari <= 5:
-        print("\n[*] PERHATIAN: Sisa token kurang dari 5 hari. Disarankan menyiapkan dana isi ulang.")
+        print(f"\n  {Warna.KUNING}[*] PERHATIAN: Sisa token kurang dari 5 hari. Siapkan dana isi ulang.{Warna.RESET}")
     else:
-        print("\n[v] STATUS AMAN: Sisa kuota token masih mencukupi untuk beberapa hari ke depan.")
+        print(f"\n  {Warna.HIJAU}[v] STATUS AMAN: Kuota token masih mencukupi.{Warna.RESET}")
 
     riwayat = muat_riwayat_token()
     if riwayat:
-        print("\n" + "-" * 75)
-        print(" Catatan Riwayat Pengisian Token Terakhir:")
+        print()
+        cetak_garis(74)
+        print(f"  {Warna.TEBAL}Riwayat 3 Pengisian Token Terakhir:{Warna.RESET}")
         for r in riwayat[-3:]:
-            print(f" - Tanggal {r['tanggal']}: Beli {format_rupiah(r['nominal'])} -> Dapat {r['kwh_didapat']:.1f} kWh (Sisa awal: {r['sisa_sebelum']:.1f} kWh)")
-    print("=" * 75)
+            print(
+                f"  - {Warna.REDUP}{r['tanggal']:<16}{Warna.RESET} │ {format_rupiah(r['nominal']):>14} │ "
+                f"+{r['kwh_didapat']:.1f} kWh {Warna.REDUP}(sisa awal {r['sisa_sebelum']:.1f} kWh){Warna.RESET}"
+            )
+    cetak_garis(74)
 
 
 def smart_budget_optimizer(daftar_perangkat, tarif_per_kwh=1444.70):

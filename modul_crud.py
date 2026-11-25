@@ -11,7 +11,25 @@ class Warna:
     CYAN = "\033[96m"
     PUTIH = "\033[97m"
     TEBAL = "\033[1m"
+    REDUP = "\033[2m"
     RESET = "\033[0m"
+
+
+def bersihkan_layar():
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def cetak_header(judul, subjudul=None, lebar=74):
+    dalam = lebar - 2
+    print(f"\n{Warna.CYAN}╭{'─' * dalam}╮{Warna.RESET}")
+    print(f"{Warna.CYAN}│{Warna.RESET}{Warna.TEBAL}{judul:^{dalam}}{Warna.RESET}{Warna.CYAN}│{Warna.RESET}")
+    if subjudul:
+        print(f"{Warna.CYAN}│{Warna.RESET}{Warna.REDUP}{subjudul:^{dalam}}{Warna.RESET}{Warna.CYAN}│{Warna.RESET}")
+    print(f"{Warna.CYAN}╰{'─' * dalam}╯{Warna.RESET}")
+
+
+def cetak_garis(lebar=74, karakter="─"):
+    print(f"{Warna.REDUP}{karakter * lebar}{Warna.RESET}")
 
 
 # Format tuple: (kode_golongan, daya_va, batas_watt_aman, tarif_per_kwh)
@@ -182,9 +200,7 @@ def lihat_log_aktivitas():
         print(f"\n{Warna.KUNING}[i] Belum ada riwayat aktivitas yang tercatat di {FILE_LOG}.{Warna.RESET}")
         return
 
-    print("\n" + "=" * 85)
-    print(f"             {Warna.CYAN}{Warna.TEBAL}RIWAYAT LOG AKTIVITAS (AUDIT TRAIL - log_aktivitas.txt){Warna.RESET}")
-    print("=" * 85)
+    cetak_header("RIWAYAT LOG AKTIVITAS", f"Sumber: {FILE_LOG}", lebar=88)
     try:
         with open(FILE_LOG, "r", encoding="utf-8") as f:
             baris_list = f.readlines()
@@ -193,12 +209,12 @@ def lihat_log_aktivitas():
         return
 
     if len(baris_list) <= 1:
-        print(f"{Warna.KUNING}[i] File log aktivitas masih kosong.{Warna.RESET}")
-        print("=" * 85)
+        print(f"  {Warna.KUNING}[i] File log aktivitas masih kosong.{Warna.RESET}")
+        cetak_garis(88)
         return
 
-    print(f"{'No':<4} | {'Timestamp':<19} | {'Aktivitas':<10} | {'Detail':<45}")
-    print("-" * 85)
+    print(f"  {Warna.TEBAL}{'No':<4} │ {'Timestamp':<19} │ {'Aktivitas':<10} │ {'Detail'}{Warna.RESET}")
+    cetak_garis(88)
     count = 0
     for b in baris_list[1:]:
         b = b.strip()
@@ -211,8 +227,8 @@ def lihat_log_aktivitas():
             aksi = parts[1]
             detail = "|".join(parts[2:])
             warna_aksi = Warna.HIJAU if aksi == "TAMBAH" else (Warna.MERAH if aksi == "HAPUS" else Warna.KUNING)
-            print(f"{count:<4} | {ts:<19} | {warna_aksi}{aksi:<10}{Warna.RESET} | {detail}")
-    print("=" * 85)
+            print(f"  {count:<4} │ {Warna.REDUP}{ts:<19}{Warna.RESET} │ {warna_aksi}{aksi:<10}{Warna.RESET} │ {detail}")
+    cetak_garis(88)
 
 
 def generate_id_baru(daftar_perangkat):
@@ -229,9 +245,7 @@ def generate_id_baru(daftar_perangkat):
 
 
 def tambah_perangkat(daftar_perangkat):
-    print("\n" + "=" * 50)
-    print(f"       {Warna.CYAN}{Warna.TEBAL}TAMBAH PERANGKAT ELEKTRONIK BARU{Warna.RESET}")
-    print("=" * 50)
+    cetak_header("TAMBAH PERANGKAT ELEKTRONIK BARU", lebar=64)
 
     nama = sanitasi_string(input("Masukkan Nama Alat (cth: TV LED 43 Inch): "))
     if not nama:
@@ -320,15 +334,13 @@ def tampilkan_tabel_perangkat(daftar_perangkat, tarif_per_kwh=1444.70, judul_fil
         print(f"\n{Warna.KUNING}[i] Belum ada data perangkat. Silakan tambahkan perangkat terlebih dahulu.{Warna.RESET}")
         return
 
-    judul = "DAFTAR INVENTARIS PERANGKAT ELEKTRONIK"
-    if judul_filter:
-        judul += f" (RUANGAN: {judul_filter.upper()})"
-
-    print("\n" + "=" * 115)
-    print(f"{Warna.CYAN}{Warna.TEBAL}{judul:^115}{Warna.RESET}")
-    print("=" * 115)
-    print(f"{'ID':<6} | {'Nama Alat':<20} | {'Ruangan':<14} | {'Watt':<6} | {'Jam':<4} | {'kWh/Bulan':<10} | {'Biaya/Bulan':<16} | {'% Beban':<7} | {'Prioritas':<9}")
-    print("-" * 115)
+    subjudul = f"Filter Ruangan: {judul_filter.upper()}" if judul_filter else f"Tarif Aktif: {format_rupiah(tarif_per_kwh)} /kWh"
+    cetak_header("DAFTAR INVENTARIS PERANGKAT ELEKTRONIK", subjudul, lebar=112)
+    print(
+        f"  {Warna.TEBAL}{'ID':<5} │ {'Nama Alat':<20} │ {'Ruangan':<13} │ {'Watt':>5} │ "
+        f"{'Jam':>3} │ {'kWh/Bln':>7} │ {'Biaya/Bulan':>15} │ {'Beban':>6} │ {'Prioritas':<8}{Warna.RESET}"
+    )
+    cetak_garis(112)
 
     total_kwh_bulanan = 0.0
     total_biaya_bulanan = 0.0
@@ -347,13 +359,17 @@ def tampilkan_tabel_perangkat(daftar_perangkat, tarif_per_kwh=1444.70, judul_fil
     for p, kwh_bulan, biaya in kalkulasi_list:
         persen = (biaya / total_biaya_bulanan * 100) if total_biaya_bulanan > 0 else 0.0
         nama_pendek = (p["nama"][:18] + "..") if len(p["nama"]) > 20 else p["nama"]
-        ruang_pendek = (p["ruangan"][:12] + "..") if len(p["ruangan"]) > 14 else p["ruangan"]
-        print(f"{p['id']:<6} | {nama_pendek:<20} | {ruang_pendek:<14} | {p['watt_aktif']:<6} | {p['jam_pakai']:<4} | {kwh_bulan:<10.2f} | {format_rupiah(biaya):<16} | {persen:>6.1f}% | {p['prioritas']:<9}")
+        ruang_pendek = (p["ruangan"][:11] + "..") if len(p["ruangan"]) > 13 else p["ruangan"]
+        print(
+            f"  {Warna.CYAN}{p['id']:<5}{Warna.RESET} │ {nama_pendek:<20} │ {ruang_pendek:<13} │ "
+            f"{p['watt_aktif']:>5} │ {p['jam_pakai']:>3} │ {kwh_bulan:>7.2f} │ "
+            f"{format_rupiah(biaya):>15} │ {persen:>5.1f}% │ {p['prioritas']:<8}"
+        )
 
-    print("-" * 115)
-    print(f" TOTAL ESTIMASI KONSUMSI : {Warna.TEBAL}{total_kwh_bulanan:.2f} kWh/Bulan{Warna.RESET}")
-    print(f" TOTAL ESTIMASI BIAYA    : {Warna.HIJAU}{Warna.TEBAL}{format_rupiah(total_biaya_bulanan)}{Warna.RESET} /Bulan (Tarif: {format_rupiah(tarif_per_kwh)}/kWh)")
-    print("=" * 115)
+    cetak_garis(112)
+    print(f"  Total Konsumsi : {Warna.TEBAL}{total_kwh_bulanan:.2f} kWh / bulan{Warna.RESET}")
+    print(f"  Total Tagihan  : {Warna.HIJAU}{Warna.TEBAL}{format_rupiah(total_biaya_bulanan)}{Warna.RESET} / bulan")
+    cetak_garis(112)
 
 
 def ubah_perangkat(daftar_perangkat):
@@ -361,9 +377,7 @@ def ubah_perangkat(daftar_perangkat):
         print(f"\n{Warna.KUNING}[i] Data perangkat masih kosong.{Warna.RESET}")
         return
 
-    print("\n" + "=" * 50)
-    print(f"            {Warna.CYAN}{Warna.TEBAL}UBAH DATA PERANGKAT{Warna.RESET}")
-    print("=" * 50)
+    cetak_header("UBAH DATA PERANGKAT", lebar=64)
     id_target = input("Masukkan ID Perangkat yang ingin diubah (cth: EL01): ").strip().upper()
 
     target_idx = -1
@@ -443,9 +457,7 @@ def ubah_perangkat(daftar_perangkat):
     rentang_lama_format = ",".join(str(j) for j in sorted(p_lama.get("rentang_jam", []))) or "(kosong)"
     rentang_baru_format = ",".join(str(j) for j in sorted(p_baru.get("rentang_jam", []))) or "(kosong)"
 
-    print("\n" + "=" * 50)
-    print(f"       {Warna.CYAN}{Warna.TEBAL}Ringkasan Perubahan:{Warna.RESET}")
-    print("=" * 50)
+    cetak_header("RINGKASAN PERUBAHAN (BEFORE VS AFTER)", lebar=64)
 
     ringkasan = [
         ("Nama        ", p_lama["nama"], p_baru["nama"], ""),
@@ -458,11 +470,11 @@ def ubah_perangkat(daftar_perangkat):
     ]
     for label, lama, baru, satuan in ringkasan:
         if lama != baru:
-            print(f"- {label}: {lama}{satuan} -> {baru}{satuan} {Warna.KUNING}(Berubah){Warna.RESET}")
+            print(f"  {label}: {lama}{satuan} -> {Warna.KUNING}{baru}{satuan} (Berubah){Warna.RESET}")
         else:
-            print(f"- {label}: {lama}{satuan} (Tetap)")
+            print(f"  {label}: {Warna.REDUP}{lama}{satuan} (Tetap){Warna.RESET}")
 
-    print("=" * 50)
+    cetak_garis(64)
     konfirmasi = input(f"{Warna.TEBAL}Simpan perubahan ke file? (y/n): {Warna.RESET}").strip().lower()
 
     if konfirmasi == "y":
@@ -482,9 +494,7 @@ def hapus_perangkat(daftar_perangkat):
         print(f"\n{Warna.KUNING}[i] Data perangkat masih kosong.{Warna.RESET}")
         return
 
-    print("\n" + "=" * 50)
-    print(f"            {Warna.CYAN}{Warna.TEBAL}HAPUS DATA PERANGKAT{Warna.RESET}")
-    print("=" * 50)
+    cetak_header("HAPUS DATA PERANGKAT", lebar=64)
     id_target = input("Masukkan ID Perangkat yang akan dihapus (cth: EL01): ").strip().upper()
 
     target_idx = -1
