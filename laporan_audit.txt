@@ -18,12 +18,20 @@ EL03   | TV LED 43 Inch         | Ruang Tengah | 80     | 5    | Rp 27.218,15
 EL04   | Setrika Listrik        | Kamar Tidur  | 350    | 2    | Rp 30.338,70
 EL05   | AC Kamar 1/2 PK        | Kamar Tidur  | 380    | 8    | Rp 137.304,29
 EL06   | Dispenser Air          | Dapur        | 350    | 4    | Rp 82.347,90
+EL07   | Router WiFi            | Ruang Tengah | 12     | 24   | Rp 12.482,21
+EL08   | Lampu LED Utama        | Ruang Tengah | 36     | 6    | Rp 9.361,66
+EL09   | Kipas Angin Berdiri    | Ruang Tengah | 45     | 6    | Rp 11.702,07
+EL10   | Laptop + Monitor       | Ruang Kerja  | 110    | 7    | Rp 37.793,35
+EL11   | Lampu Meja Belajar     | Ruang Kerja  | 15     | 4    | Rp 2.600,46
+EL12   | Mesin Cuci 1 Tabung    | Kamar Mandi  | 320    | 2    | Rp 32.505,75
+EL13   | Pompa Air Otomatis     | Kamar Mandi  | 125    | 2    | Rp 10.835,25
+EL14   | Speaker Aktif          | Ruang Tengah | 60     | 3    | Rp 16.902,99
 ---------------------------------------------------------------------------
-TOTAL ESTIMASI BIAYA LISTRIK : Rp 490.446,76 / Bulan
-TOTAL KONSUMSI LISTRIK       : 339.48 kWh / Bulan
-ESTIMASI EMISI CO2           : 288.56 kg / Bulan
-ESTIMASI KEBUTUHAN POHON     : 158 pohon (ekuivalen tahunan)
-POTENSI RUGI VAMPIRE POWER   : Rp 882.076,03 / Tahun
+TOTAL ESTIMASI BIAYA LISTRIK : Rp 624.630,49 / Bulan
+TOTAL KONSUMSI LISTRIK       : 432.36 kWh / Bulan
+ESTIMASI EMISI CO2           : 367.51 kg / Bulan
+ESTIMASI KEBUTUHAN POHON     : 201 pohon (ekuivalen tahunan)
+POTENSI RUGI VAMPIRE POWER   : Rp 1.101.554,86 / Tahun
 
 CATATAN AUDITOR:
 - Matikan alat elektronika saat jam beban puncak (18:00 - 21:00).
@@ -33,37 +41,37 @@ CATATAN AUDITOR:
 ===========================================================================
 HASIL SIMULASI BEBAN LISTRIK 24 JAM
 ===========================================================================
-JAM       |BEBAN ( WATT ) |VISUALISASI              |STATUS    
+JAM        | BEBAN (WATT)    | VISUALISASI               | STATUS    
 ===========================================================================
-00:00      | 577            : | #####                     | AMAN
-01:00      | 577            : | #####                     | AMAN
-02:00      | 577            : | #####                     | AMAN
-03:00      | 577            : | #####                     | AMAN
-04:00      | 577            : | #####                     | AMAN
-05:00      | 205            : | #                         | AMAN
-06:00      | 890            : | ########                  | WASPADA
-07:00      | 530            : | ####                      | AMAN
-08:00      | 205            : | #                         | AMAN
-09:00      | 205            : | #                         | AMAN
-10:00      | 205            : | #                         | AMAN
-11:00      | 205            : | #                         | AMAN
-12:00      | 530            : | ####                      | AMAN
-13:00      | 205            : | #                         | AMAN
-14:00      | 205            : | #                         | AMAN
-15:00      | 205            : | #                         | AMAN
-16:00      | 205            : | #                         | AMAN
-17:00      | 273            : | ##                        | AMAN
-18:00      | 983            : | ########                  | WASPADA
-19:00      | 1308           : | ###########               | OVERLOAD
-20:00      | 273            : | ##                        | AMAN
-21:00      | 645            : | #####                     | AMAN
-22:00      | 577            : | #####                     | AMAN
-23:00      | 577            : | #####                     | AMAN
+00:00      | 610             | #####                     | AMAN
+01:00      | 610             | #####                     | AMAN
+02:00      | 610             | #####                     | AMAN
+03:00      | 610             | #####                     | AMAN
+04:00      | 610             | #####                     | AMAN
+05:00      | 238             | ##                        | AMAN
+06:00      | 1048            | #########                 | WASPADA
+07:00      | 563             | #####                     | AMAN
+08:00      | 553             | #####                     | AMAN
+09:00      | 657             | #####                     | AMAN
+10:00      | 342             | ###                       | AMAN
+11:00      | 387             | ###                       | AMAN
+12:00      | 608             | #####                     | AMAN
+13:00      | 387             | ###                       | AMAN
+14:00      | 387             | ###                       | AMAN
+15:00      | 387             | ###                       | AMAN
+16:00      | 437             | ###                       | AMAN
+17:00      | 481             | ####                      | AMAN
+18:00      | 1052            | #########                 | WASPADA
+19:00      | 1392            | ############              | OVERLOAD
+20:00      | 407             | ###                       | AMAN
+21:00      | 729             | ######                    | AMAN
+22:00      | 661             | ######                    | AMAN
+23:00      | 646             | #####                     | AMAN
 ---------------------------------------------------------------------------
 
 CATATAN PERINGATAN ANTI JEGLEK
 [!] PERINGATAN: DITEMUKAN JAM OVERLOAD!
--Jam 19:00: 1308 Watt
- Perangkat menyala : Kulkas 2 Pintu, Rice Cooker, TV LED 43 Inch, Setrika Listrik, Dispenser Air
-REKOMENDASI: Kurangi atau geser penggunaanperangkat berdaya besar ke jam yang lebih aman.
+- Jam 19:00: 1392 Watt
+  Perangkat menyala : Kulkas 2 Pintu, Rice Cooker, TV LED 43 Inch, Setrika Listrik, Dispenser Air, Router WiFi, Lampu LED Utama, Lampu Meja Belajar
+REKOMENDASI: Kurangi atau geser penggunaan perangkat berdaya besar ke jam yang lebih aman.
 ===========================================================================
